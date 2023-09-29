@@ -78,7 +78,7 @@ c    be used for selection or diagnosis.
       integer :: tqm, pqm, qqm, uqm, vqm, zqm
       logical :: found, uotype, uqcflag, use_this_data_real, 
      +           use_this_data_int, processed
-      logical :: debug = .false.
+      logical :: debug = .true.
 
 c    Namelist Parameters
 c----------------------------------------------------------------------
@@ -472,6 +472,14 @@ c----------------------------------------------------------------------
         if(vqm .eq. 0) voe = voe*0.9
         if(vqm .eq. 3) voe = voe*1.2
 
+       ! SET DEFULAT ERRORS IF MISSING ABOVE
+       if ( toe > 1.e9 ) toe = 2.0
+       if ( qoe > 1.e9 ) qoe = 0.1
+       if ( uoe > 1.e9 ) uoe = 2.0
+       if ( voe > 1.e9 ) voe = 2.0
+       if ( poe > 1.e9 ) poe = 20.0
+
+
 c    write out temperature observation from ADPUPA, AIRCAR, AIRCFT
 c----------------------------------------------------------------------
         if (subset(1:6).eq.'ADPUPA' .or. subset(1:6).eq.'AIRCAR' .or.
@@ -479,7 +487,7 @@ c----------------------------------------------------------------------
      &                                   subset(1:6).eq.'AIRCFT') then
           if (use_this_data_int(tqm,qctype_use,inum_qctype) .and. 
      &        use_this_data_int(pqm,qctype_use,inum_qctype) .and. 
-     &        toe .lt. 1.e9 .and. tob .lt. 1.e9                  ) then
+     &        tob .lt. 1.e9                  ) then
 
             tdata(1) = toe
             tdata(4) = ppb
@@ -532,7 +540,7 @@ c----------------------------------------------------------------------
 
           if (use_this_data_int(qqm,qctype_use,inum_qctype) .and.
      &        use_this_data_int(pqm,qctype_use,inum_qctype) .and.
-     &        qoe .lt. 1.e9 .and. qob .lt. 1.e9             ) then
+     &        qob .lt. 1.e9             ) then
 
 c           compute the error of specific moisture based on RH obs error
 
@@ -652,7 +660,7 @@ c----------------------------------------------------------------------
      &      subset(1:6).eq.'SFCSHP' .or. subset(1:6).eq.'ADPSFC') then
 
           if(use_this_data_int(pqm,qctype_use,inum_qctype) .and. 
-     &       poe.lt.1.e9 .and. pob.lt.1.e9 .and. stat_elv.eq.zob) then
+     &       pob.lt.1.e9 .and. stat_elv.eq.zob) then
 
             if ( ptype .gt. 200 )  ptype = ptype - 100
             if ( ptype .eq. 184 )  ptype = 183
@@ -680,8 +688,8 @@ c----------------------------------------------------------------------
 
           if(use_this_data_int(uqm,qctype_use,inum_qctype) .and. 
      &       use_this_data_int(pqm,qctype_use,inum_qctype) .and. 
-     &       uoe .lt. 1.e9 .and. uob .lt. 1.e9             .and.
-     &       voe .lt. 1.e9 .and. vob .lt. 1.e9             ) then
+     &       uob .lt. 1.e9             .and.
+     &       vob .lt. 1.e9             ) then
 
             udata(1) = uoe
             udata(4) = ppb
@@ -747,7 +755,7 @@ c----------------------------------------------------------------------
  
           if (use_this_data_int(zqm,qctype_use,inum_qctype) .and.
      &        use_this_data_int(pqm,qctype_use,inum_qctype) .and. 
-     &        zoe. lt. 1.e9 .and. zob .lt. 1.e9            ) then
+     &        zob .lt. 1.e9            ) then
 
             zdata(1) = zoe
             zdata(4) = ppb

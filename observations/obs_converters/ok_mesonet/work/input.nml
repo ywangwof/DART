@@ -15,7 +15,10 @@
                              '../../../../observations/forward_operators/obs_def_metar_mod.f90',
                              '../../../../observations/forward_operators/obs_def_dew_point_mod.f90',
                              '../../../../observations/forward_operators/obs_def_gts_mod.f90',
-                             '../../../../observations/forward_operators/obs_def_rel_humidity_mod.f90'
+                             '../../../../observations/forward_operators/obs_def_rel_humidity_mod.f90',
+                             '../../../../observations/forward_operators/obs_def_radar_mod.f90',
+                             '../../../../observations/forward_operators/obs_def_cwp_mod.f90'
+
   / 
 
 &utilities_nml
@@ -30,6 +33,23 @@
   /
 
 &obs_kind_nml
+assimilate_these_obs_types =
+'METAR_ALTIMETER',
+'METAR_U_10_METER_WIND',
+'METAR_V_10_METER_WIND',
+'METAR_TEMPERATURE_2_METER',
+'METAR_DEWPOINT_2_METER',
+'LAND_SFC_ALTIMETER',
+'LAND_SFC_DEWPOINT',
+'LAND_SFC_TEMPERATURE',
+'LAND_SFC_U_WIND_COMPONENT',
+'LAND_SFC_V_WIND_COMPONENT',
+'RADAR_REFLECTIVITY',
+'RADAR_CLEARAIR_REFLECTIVITY',
+'DOPPLER_RADIAL_VELOCITY',
+'GOES_LWP_PATH',
+'GOES_IWP_PATH',
+'GOES_CWP_ZERO'
   /
 
 &obs_sequence_tool_nml

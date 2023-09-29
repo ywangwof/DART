@@ -30,6 +30,7 @@ program convert_ok_mesonet
 ! may want to add a namelist - so leaving module components active for now
 use         utilities_mod, only : get_unit, find_namelist_in_file, check_namelist_read, &
                                   do_nml_file, do_nml_term, logfileunit, nmlfileunit
+use     utilities_mod, only : initialize_utilities, finalize_utilities
 use             types_mod, only : r8, missing_r8
 use      time_manager_mod, only : time_type, set_calendar_type, set_date, &
                                   increment_time, get_time, operator(-), GREGORIAN
@@ -80,6 +81,7 @@ logical :: use_metar_ob_errors       = .true.
 
 real(r8), parameter :: fmiss         = -999.0_r8 ! -998 is also used for some 
                                                  ! unused fields
+real(r8), parameter :: fmiss2        = -996.0_r8 ! -998 is also used for some 
 logical  :: fexist, first_obs
 integer :: iunit, obs_num, i
 real(r8) :: qc
@@ -100,6 +102,8 @@ type(obs_sequence_type) :: obs_seq
 type(obs_def_type)      :: obs_def
 type(obs_type)          :: obs, prev_obs
 type(time_type)         :: time_obs, prev_time
+
+call initialize_utilities('convert_ok_mesonet')
 
 obs_num   = 1
 first_obs = .true.
@@ -229,7 +233,7 @@ obsloop: do
   endif
 
 ! moisture
-  if ( tair /= fmiss .and. relh /= fmiss .and. pres /= fmiss ) then
+  if ( tair /= fmiss .and. relh /= fmiss .and. relh /= fmiss2 .and. pres /= fmiss ) then
 
     qsat = specific_humidity(sat_vapor_pressure(tmpk), pres * 100.0_r8)
 
@@ -306,6 +310,7 @@ close(iunit)
 ! if we added any obs to the sequence, write it now.
 if ( get_num_obs(obs_seq) > 0 )  call write_obs_seq(obs_seq, omeso_out_file)
    write (*,fmt='(A,I5,A)') 'Created ',obs_num, ' obs'
+call finalize_utilities()
 end program convert_ok_mesonet
 !
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!

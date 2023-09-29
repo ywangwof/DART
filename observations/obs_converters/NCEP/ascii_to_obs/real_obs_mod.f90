@@ -67,6 +67,14 @@ use obs_kind_mod, only : LAND_SFC_RELATIVE_HUMIDITY
 use obs_kind_mod, only : LAND_SFC_DEWPOINT
 use obs_kind_mod, only : LAND_SFC_ALTIMETER
 use obs_kind_mod, only : LAND_SFC_PRESSURE 
+use obs_kind_mod, only : METAR_U_10_METER_WIND
+use obs_kind_mod, only : METAR_V_10_METER_WIND
+use obs_kind_mod, only : METAR_TEMPERATURE_2_METER 
+!use obs_kind_mod, only : METAR_SFC_SPECIFIC_HUMIDITY
+use obs_kind_mod, only : METAR_RELATIVE_HUMIDITY_2_METER
+use obs_kind_mod, only : METAR_DEWPOINT_2_METER
+use obs_kind_mod, only : METAR_ALTIMETER
+!use obs_kind_mod, only : METAR_SFC_PRESSURE
 use obs_kind_mod, only : RADIOSONDE_SURFACE_ALTIMETER
 use obs_kind_mod, only : SAT_U_WIND_COMPONENT
 use obs_kind_mod, only : SAT_V_WIND_COMPONENT
@@ -88,8 +96,8 @@ logical, save :: module_initialized = .false.
 ! set this to true if you want to print out the current time
 ! after each N observations are processed, for benchmarking.
 logical :: print_timestamps = .false.
-integer :: print_every_Nth  = 10000
-logical :: debug            = .false.
+integer :: print_every_Nth  = 5000
+logical :: debug            = .true.
 
 character(len=512) :: msgstring1, msgstring2, msgstring3
 
@@ -98,7 +106,7 @@ character(len=512) :: msgstring1, msgstring2, msgstring3
 contains
 
 
-function real_obs_sequence (year, month, day, hourt, max_num, select_obs, &
+function real_obs_sequence (year, month, day, hour, max_num, select_obs, &
           ObsBase, ADDUPA, AIRCAR, AIRCFT, SATEMP, SFCSHP, ADPSFC, SATWND, &
           obs_U, obs_V, obs_T, obs_PS, obs_QV, obs_Z, inc_specific_humidity,&
           inc_relative_humidity, inc_dewpoint, inc_surface_pressure, &
@@ -106,8 +114,8 @@ function real_obs_sequence (year, month, day, hourt, max_num, select_obs, &
 !------------------------------------------------------------------------------
 !  this function is to prepare NCEP decoded BUFR data to DART sequence format
 !
-integer,            intent(in) :: year, month, day, max_num, select_obs
-character(len = *), intent(in) :: ObsBase, hourt
+integer,            intent(in) :: year, month, day, hour, max_num, select_obs
+character(len = *), intent(in) :: ObsBase
 logical,            intent(in) :: ADDUPA, AIRCAR, AIRCFT, SATEMP, SFCSHP, ADPSFC, SATWND
 logical,            intent(in) :: obs_U, obs_V, obs_T, obs_PS, obs_QV, obs_Z, obs_time
 logical,            intent(in) :: inc_specific_humidity, inc_relative_humidity, &
@@ -121,7 +129,7 @@ type(obs_type) :: obs, prev_obs
 integer :: i, io, num_copies, num_qc
 integer :: days, seconds
 integer :: day0, sec0
-integer :: hour, imin, sec
+integer :: imin, sec
 integer :: obs_num, calender_type, read_counter
 type(time_type) :: current_day, time_obs, prev_time
 
@@ -154,7 +162,7 @@ real (r8) :: vloc, obs_value, aqc
 
 real (r8) :: bin_beg, bin_end
 
-character(len = 8 ) :: obsdate
+character(len = 10 ) :: obsdate
 character(len = 256) :: obsfile, label
 character(len = 6 ) :: subset
 logical :: pass, first_obs
@@ -187,10 +195,11 @@ call init_obs(prev_obs, num_copies, num_qc)
 calender_type = GREGORIAN
 call set_calendar_type(calender_type)
 
-! get the time (seconds & days) for 00Z of current day (year,month,day)
-hour = 0
+! get the time (seconds & days) for inhour  of current day (year,month,day)
+!imin = 15  !ADD 15 MINUTES FOR DATA LAG
 imin = 0
 sec  = 0
+
 current_day = set_date(year, month, day, hour, imin, sec)
 call get_time(current_day, sec0, day0)
 
@@ -199,22 +208,15 @@ write(msgstring1,*) 'processing data for day, sec= ', day0, sec0
 call error_handler(E_MSG,'real_obs_sequence',msgstring1)
 
 ! open NCEP observation data file
+write(obsdate, '(i4.4,i2.2,i2.2,i2.2)') year, month, day, hour
 
-write(obsdate, '(i4.4,i2.2,i2.2)') year, month, day
+obs_file_len = len_trim(adjustl(ObsBase)) + len(obsdate)
 
-obs_file_len = len_trim(adjustl(ObsBase)) + len(obsdate) + len(hourt)
 
-if (obs_file_len > len(obsfile)) then
-   write(msgstring1,'(A,I8)') 'ObsBase string length too long: ', &
-                              len_trim(adjustl(ObsBase))
-   write(msgstring2,'(A,I8)') 'ObsBase string must be shorter than: ',&
-                              len(obsfile) - len(obsdate) - len(hourt)
-   call error_handler(E_ERR, 'real_obs_sequence', msgstring1, &
-              source, revision, revdate, text2=msgstring2)
+!obsfile  = trim(adjustl(ObsBase))//obsdate
+obsfile  = 'temp_obs'
 
-endif
 
-obsfile  = trim(adjustl(ObsBase))//obsdate//hourt
 obs_unit = open_file(obsfile, form='formatted', action='read')
 write(msgstring1,*) 'input file opened= "'//trim(obsfile)//'"'
 call error_handler(E_MSG,'real_obs_sequence',msgstring1)
@@ -244,18 +246,20 @@ obsloop:  do
 
    read_counter = read_counter + 1
 
+!   print*, obs_err, lon, lat, lev, zob, zob2, rcount, time, obstype, iqc, subset, pc
+
 !   A 'day' is from 03:01Z of one day through 03Z of the next.
 !   skip the observations at exact 03Z of the beginning of the day
 !   (obs at 03Z the next day have a time of 27.)
 !------------------------------------------------------------------------------
-   if(time == 3.0_r8) then
-      if (debug) then
-         write(msgstring1,*) 'invalid time.  hours = ', time
-         call error_handler(E_MSG,'real_obs_sequence',msgstring1)
-      endif
-      iskip(fail_3Z) = iskip(fail_3Z) + 1
-      cycle obsloop 
-   endif 
+!   if(time == 3.0_r8) then
+!      if (debug) then
+!         write(msgstring1,*) 'invalid time.  hours = ', time
+!         call error_handler(E_MSG,'real_obs_sequence',msgstring1)
+!      endif
+!      iskip(fail_3Z) = iskip(fail_3Z) + 1
+!      cycle obsloop 
+!   endif 
 
    !  select the obs for the time window
    if(time < bin_beg .or. time > bin_end) then
@@ -331,7 +335,7 @@ obsloop:  do
      if(obstype == 161 .or. obstype == 163) obs_kind = ATOV_TEMPERATURE
      if(obstype == 171 .or. obstype == 173) obs_kind = ATOV_TEMPERATURE
      if(obstype == 180 .or. obstype == 182) obs_kind = MARINE_SFC_TEMPERATURE
-     if(obstype == 181 .or. obstype == 183) obs_kind = LAND_SFC_TEMPERATURE
+     if(obstype == 181 .or. obstype == 183 .or. obstype == 187 .or. obstype == 188) obs_kind = METAR_TEMPERATURE_2_METER
    endif
 
    if(obs_prof == 5) then
@@ -341,21 +345,21 @@ obsloop:  do
        if(obstype == 130 .or. obstype == 131) obs_kind = AIRCRAFT_SPECIFIC_HUMIDITY
        if(obstype == 133                    ) obs_kind = ACARS_SPECIFIC_HUMIDITY
        if(obstype == 180 .or. obstype == 182) obs_kind = MARINE_SFC_SPECIFIC_HUMIDITY
-       if(obstype == 181 .or. obstype == 183) obs_kind = LAND_SFC_SPECIFIC_HUMIDITY
+       if(obstype == 181 .or. obstype == 183 .or. obstype == 187 .or. obstype == 188) obs_kind = LAND_SFC_SPECIFIC_HUMIDITY
      else if ( zob2 == 1.0_r8 .and. inc_relative_humidity ) then
        obs_kind_gen = QTY_RELATIVE_HUMIDITY
        if(obstype == 120 .or. obstype == 132) obs_kind = RADIOSONDE_RELATIVE_HUMIDITY
        if(obstype == 130 .or. obstype == 131) obs_kind = AIRCRAFT_RELATIVE_HUMIDITY
        if(obstype == 133                    ) obs_kind = ACARS_RELATIVE_HUMIDITY
        if(obstype == 180 .or. obstype == 182) obs_kind = MARINE_SFC_RELATIVE_HUMIDITY
-       if(obstype == 181 .or. obstype == 183) obs_kind = LAND_SFC_RELATIVE_HUMIDITY
+       if(obstype == 181 .or. obstype == 183 .or. obstype == 187 .or. obstype == 188) obs_kind = LAND_SFC_RELATIVE_HUMIDITY
      else if ( zob2 == 2.0_r8 .and. inc_dewpoint ) then
        obs_kind_gen = QTY_DEWPOINT
        if(obstype == 120 .or. obstype == 132) obs_kind = RADIOSONDE_DEWPOINT
        if(obstype == 130 .or. obstype == 131) obs_kind = AIRCRAFT_DEWPOINT
        if(obstype == 133                    ) obs_kind = ACARS_DEWPOINT
        if(obstype == 180 .or. obstype == 182) obs_kind = MARINE_SFC_DEWPOINT
-       if(obstype == 181 .or. obstype == 183) obs_kind = LAND_SFC_DEWPOINT
+       if(obstype == 181 .or. obstype == 183 .or. obstype == 187 .or. obstype == 188) obs_kind = METAR_DEWPOINT_2_METER 
      endif
    endif
 
@@ -364,11 +368,11 @@ obsloop:  do
      if ( zob2 == 0.0_r8 .and. inc_surface_pressure ) then
        if(obstype == 120                    ) obs_kind = RADIOSONDE_SURFACE_PRESSURE 
        if(obstype == 180 .or. obstype == 182) obs_kind = MARINE_SFC_PRESSURE 
-       if(obstype == 181                    ) obs_kind = LAND_SFC_PRESSURE 
+       if(obstype == 181 .or. obstype == 187 .or. obstype == 188) obs_kind = LAND_SFC_PRESSURE 
      else
        if(obstype == 120                    ) obs_kind = RADIOSONDE_SURFACE_ALTIMETER
        if(obstype == 180 .or. obstype == 182) obs_kind = MARINE_SFC_ALTIMETER
-       if(obstype == 181                    ) obs_kind = LAND_SFC_ALTIMETER
+       if(obstype == 181 .or. obstype == 187 .or. obstype == 188) obs_kind = METAR_ALTIMETER
      endif
    endif
 
@@ -383,7 +387,7 @@ obsloop:  do
      if(obstype == 252 .or. obstype == 253) obs_kind = SAT_U_WIND_COMPONENT
      if(obstype == 255                    ) obs_kind = SAT_U_WIND_COMPONENT
      if(obstype == 280 .or. obstype == 282) obs_kind = MARINE_SFC_U_WIND_COMPONENT
-     if(obstype == 281 .or. obstype == 284) obs_kind = LAND_SFC_U_WIND_COMPONENT
+     if(obstype == 281 .or. obstype == 284 .or. obstype == 287 .or. obstype == 288) obs_kind = METAR_U_10_METER_WIND
    endif
 
    if(obs_prof == 9) then
@@ -397,7 +401,7 @@ obsloop:  do
      if(obstype == 252 .or. obstype == 253) obs_kind = SAT_V_WIND_COMPONENT
      if(obstype == 255                    ) obs_kind = SAT_V_WIND_COMPONENT
      if(obstype == 280 .or. obstype == 282) obs_kind = MARINE_SFC_V_WIND_COMPONENT
-     if(obstype == 281 .or. obstype == 284) obs_kind = LAND_SFC_V_WIND_COMPONENT
+     if(obstype == 281 .or. obstype == 284 .or. obstype == 287 .or. obstype == 288) obs_kind = METAR_V_10_METER_WIND
    endif
 
    if(obs_prof == 7) then
@@ -516,7 +520,7 @@ obsloop:  do
    endif
 
    ! set obs value and error if necessary
-   if ( obs_kind == LAND_SFC_ALTIMETER .or. obs_kind == MARINE_SFC_ALTIMETER &
+   if ( obs_kind == METAR_ALTIMETER .or. obs_kind == MARINE_SFC_ALTIMETER &
         .or. obs_kind == RADIOSONDE_SURFACE_ALTIMETER ) then
       vloc = lev                  ! station height, not used now for Ps obs
       which_vert = VERTISSURFACE
@@ -541,14 +545,14 @@ obsloop:  do
 
    else
 
-      if ( hourt == '' ) then
-         call get_time(increment_time(set_date(year,month,day,0,0,0), &
-                        nint(time / 6.0_r8) * 21600, 0), seconds, days)
-      else
-         read(hourt, fmt='(i2)') hour
-         call get_time(increment_time(set_date(year,month,day,0,0,0), & 
-                         hour*3600, 0), seconds, days)
-      endif
+ !     if ( hourt == '' ) then
+ !        call get_time(increment_time(set_date(year,month,day,0,0,0), &
+ !                       nint(time / 6.0_r8) * 21600, 0), seconds, days)
+ !     else
+ !        read(hourt, fmt='(i2)') hour
+ !        call get_time(increment_time(set_date(year,month,day,0,0,0), & 
+ !                        hour*3600, 0), seconds, days)
+ !     endif
 
    end if
 

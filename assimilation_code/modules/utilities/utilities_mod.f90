@@ -4,10 +4,10 @@
 
 module utilities_mod
 
-!> general purpose lower level utility routines.  
+!> general purpose lower level utility routines.
 !>
-!> probably large enough now this file should be split with the 
-!> logging and error handing here, maybe the file routines in 
+!> probably large enough now this file should be split with the
+!> logging and error handing here, maybe the file routines in
 !> another util module?
 
 use types_mod, only : r4, r8, digits12, i2, i4, i8, PI, MISSING_R8, MISSING_I
@@ -127,21 +127,21 @@ character(len=512) :: msgstring1, msgstring2, msgstring3
 ! Namelist input with default values
 
 ! E_ERR All warnings/errors are assumed fatal.
-integer            :: TERMLEVEL      = E_ERR   
+integer            :: TERMLEVEL      = E_ERR
 
 ! default log and namelist output filenames
 character(len=256) :: logfilename    = 'dart_log.out'
 character(len=256) :: nmlfilename    = 'dart_log.nml'
 
 ! output each module subversion details
-logical            :: module_details = .true.  
+logical            :: module_details = .true.
 
 ! print messages labeled DBG
-logical            :: print_debug    = .false. 
+logical            :: print_debug    = .false.
 
 ! where to write namelist values.
 ! valid strings:  'none', 'file', 'terminal', 'both'
-character(len=32)  :: write_nml      = 'file'  
+character(len=32)  :: write_nml      = 'file'
 
 namelist /utilities_nml/ TERMLEVEL, logfilename, module_details, &
                          nmlfilename, print_debug, write_nml
@@ -208,7 +208,7 @@ call check_namelist_read(iunit, io, "utilities_nml")
 ! Check to make sure termlevel is set to a reasonable value
 call check_term_level(TERMLEVEL)
 
-! Open the log file with the name from the namelist 
+! Open the log file with the name from the namelist
 ! does not return here on failure.
 logfileunit = get_unit()
 
@@ -220,14 +220,14 @@ open(logfileunit, file=lname, form='formatted', &
                   action='write', position='append', iostat = io )
 if ( io /= 0 ) call fatal_opening_log('initialize_utilities', lname)
 
-! Log the starting wall-clock time 
+! Log the starting wall-clock time
 if (do_output_flag) then
    if ( present(progname) ) then
       call log_time (logfileunit, label='Starting ', &
                      string1='Program '//trim(progname))
    else
       call log_time (logfileunit, label='Starting ')
-   endif 
+   endif
 endif
 
 ! Echo the module information using normal mechanism
@@ -239,7 +239,7 @@ call set_nml_output(write_nml)
 ! to be same as logunit.
 if (do_nml_file()) then
    if (nmlfilename /= lname) then
- 
+
       nmlfileunit = get_unit()
       open(nmlfileunit, file=nmlfilename, form='formatted', &
            position='append', iostat = io )
@@ -247,7 +247,7 @@ if (do_nml_file()) then
          call error_handler(E_ERR,'initialize_utilities', &
              'Cannot open namelist log file "'//trim(nmlfilename)//'"', source)
       endif
- 
+
    else
      nmlfileunit = logfileunit
    endif
@@ -261,7 +261,7 @@ if (do_output_flag) then
          write(nmlfileunit, *) '!Starting Program '//trim(progname)
       else
          write(nmlfileunit, *) '!Starting Program '
-      endif 
+      endif
    endif
    if (do_nml_file()) write(nmlfileunit, nml=utilities_nml)
    if (do_nml_term()) write(     *     , nml=utilities_nml)
@@ -269,7 +269,7 @@ endif
 
 ! Record the values used for variable kinds
 if (do_output_flag .and. print_debug) call dump_varkinds()
-  
+
 end subroutine initialize_utilities
 
 !-----------------------------------------------------------------------
@@ -284,7 +284,7 @@ if (.not. module_initialized) return
 if (standalone) then
    module_initialized = .false.
    return
-endif   
+endif
 
 if (do_output_flag) then
    if ( present(progname) ) then
@@ -292,15 +292,15 @@ if (do_output_flag) then
                      string1='Program '//trim(progname))
    else
       call log_time (logfileunit, label='Finished ')
-   endif 
+   endif
 
    if (do_nml_file() .and. (nmlfileunit /= logfileunit)) then
       if ( present(progname) ) then
          write(nmlfileunit, *) '!Finished Program '//trim(progname)
       else
          write(nmlfileunit, *) '!Finished Program '
-      endif 
-   endif 
+      endif
+   endif
 endif
 
 call close_file(logfileunit)
@@ -381,7 +381,7 @@ end function do_nml_term
 !-----------------------------------------------------------------------
 !> Opens namelist_file_name if it exists on unit iunit, error if it
 !> doesn't exist.
-!> Searches file for a line containing ONLY the string  &nml_name, 
+!> Searches file for a line containing ONLY the string  &nml_name,
 !> for instance &filter_nml. If found, backs up one record and
 !> returns true. Otherwise, error message and terminates
 !>
@@ -468,7 +468,7 @@ if(iostat_in == 0) then
    return
 endif
 
-! If it wasn't successful, print the line on which it failed  
+! If it wasn't successful, print the line on which it failed
 backspace(iunit)
 read(iunit, '(A)', iostat = io) nml_string
 
@@ -487,16 +487,16 @@ end subroutine check_namelist_read
 
 !-----------------------------------------------------------------------
 ! TODO: the next 2 routines belong right after the string_to_logical function.
-!> convert integers or strings describing options into integer. 
-!> 
+!> convert integers or strings describing options into integer.
+!>
 !> Some input items have historically been integers which do not help describe the
 !> option they are selecting.  They are being converted to descriptive strings.
-!> During a transition period before the integers are deprecated this routine will return 
-!> an integer value if the input string is either an integer or a string.  
+!> During a transition period before the integers are deprecated this routine will return
+!> an integer value if the input string is either an integer or a string.
 !> For strings, the corresponding integer values are input as a 1-to-1 array with the
 !> valid strings.   On error this routine prints an error message and does not return.
-!> If needed, this routine could be changed to take an optional return code, which if 
-!> present would return to the calling code without printing or calling the error 
+!> If needed, this routine could be changed to take an optional return code, which if
+!> present would return to the calling code without printing or calling the error
 !> handler so the caller can take an alternative code path.
 
 function get_value_from_string(input,integer_options,string_options,context)
@@ -504,7 +504,7 @@ function get_value_from_string(input,integer_options,string_options,context)
 character(len=*), intent(in) :: input                 ! value from namelist, eg
 integer,          intent(in) :: integer_options(:)    ! possible integer values
 character(len=*), intent(in) :: string_options(:)     ! matching string values
-character(len=*), intent(in), optional :: context 
+character(len=*), intent(in), optional :: context
 integer                      :: get_value_from_string
 
 character(len=len_trim(input)) :: uppercase
@@ -515,7 +515,7 @@ if ( .not. module_initialized ) call initialize_utilities
 
 get_value_from_string = MISSING_I
 
-! Try to read the input as an ASCII-coded integer ( i.e. '3') 
+! Try to read the input as an ASCII-coded integer ( i.e. '3')
 
 read(input,*,iostat=ios) candidate
 if (ios == 0) then
@@ -573,9 +573,9 @@ character(len=256) :: string1
 integer :: iopt
 
 if (present(whofrom)) then
-   msgstring1 = trim(whofrom)//' no valid option found.' 
+   msgstring1 = trim(whofrom)//' no valid option found.'
 else
-   msgstring1 = 'No valid option found.' 
+   msgstring1 = 'No valid option found.'
 endif
 write(msgstring2,*)'input is "'//trim(input)//'"'
 write(msgstring3,*)'valid values are the following integers or matching character strings:'
@@ -584,7 +584,7 @@ call error_handler(E_MSG, 'get_value_from_string', msgstring1, source, &
            text2=msgstring2, text3=msgstring3)
 
 do iopt = 1,size(integer_options)
-   write(string1,*) integer_options(iopt), ' = "'//trim(string_options(iopt))//'"' 
+   write(string1,*) integer_options(iopt), ' = "'//trim(string_options(iopt))//'"'
    call error_handler(E_MSG,'get_value_from_string',string1)
 enddo
 
@@ -608,8 +608,8 @@ end subroutine get_value_error
 subroutine log_it(message)
 character(len=*), intent(in) :: message
 
-                      write(     *     , *) trim(message)
-if (logfileunit >  0) write(logfileunit, *) trim(message)
+                      write(     *     , '(a)') trim(message)
+if (logfileunit >  0) write(logfileunit, '(a)') trim(message)
 
 end subroutine log_it
 
@@ -718,7 +718,7 @@ end function file_exist
 !>
 
 ! get available file unit number
-function get_unit() 
+function get_unit()
 integer :: get_unit
 
 integer :: i, iunit
@@ -815,9 +815,9 @@ select case(level)
         ! this has a problem that multiple tasks are writing to the same logfile.
         ! it's overwriting existing content.  short fix is to NOT write ALLMSGs
         ! to the log file, only stdout.
-                            write(*,*) trim(trim(wherefrom)//' '//trim(text))
-        if (present(text2)) write(*,*) trim(trim(wherecont)//' '//trim(text2))
-        if (present(text3)) write(*,*) trim(trim(wherecont)//' '//trim(text3))
+                            write(*,'(a)') trim(trim(wherefrom)//' '//trim(text))
+        if (present(text2)) write(*,'(a)') trim(trim(wherecont)//' '//trim(text2))
+        if (present(text3)) write(*,'(a)') trim(trim(wherecont)//' '//trim(text3))
       endif
 
    case (E_DBG, E_WARN, E_ERR)
@@ -833,7 +833,7 @@ select case(level)
 end select
 
 ! TERMLEVEL gets set in the namelist
-if( level >= TERMLEVEL ) call exit_all( 99 ) 
+if( level >= TERMLEVEL ) call exit_all( 99 )
 
 end subroutine error_handler
 
@@ -866,7 +866,7 @@ if (open) then
 endif
 
 ! not already open, so open it.
-      
+
 ! set defaults, and then modify depending on what user requests
 ! via the arguments.  this combination of settings either creates
 ! a new file or overwrites an existing file from the beginning.
@@ -881,7 +881,7 @@ del        = 'apostrophe'
 conversion = 'native'
 
 if (present(form)) format = form
-call to_upper(format)  
+call to_upper(format)
 
 ! change defaults based on intended action.
 if (present(action)) then
@@ -911,8 +911,8 @@ if (present(action)) then
 endif
 
 ! from the ibm help pages:
-!   valid values for access: SEQUENTIAL, DIRECT or STREAM. 
-!   If ACCESS= is DIRECT, RECL= must be specified. 
+!   valid values for access: SEQUENTIAL, DIRECT or STREAM.
+!   If ACCESS= is DIRECT, RECL= must be specified.
 !   If ACCESS= is STREAM, RECL= must not be specified.
 !   SEQUENTIAL is the default, for which RECL= is optional
 ! i can't see how to specify all the options in any kind of reasonable way.
@@ -937,7 +937,7 @@ endif
 ! endian-conversion only applies to binary files
 ! valid values seem to be:  'native', 'big-endian', 'little-endian', and possibly 'cray'
 ! depending on the compiler.
-if (present(convert)) then 
+if (present(convert)) then
    if (format == 'FORMATTED') then
       write(msgstring1,*) 'opening file "'//trim(fname)//'"'
       write(msgstring2,*) 'cannot specify binary conversion on a formatted file'
@@ -969,8 +969,8 @@ if (format == 'FORMATTED') then
       open (iunit, file=trim(fname), form=format, access=acc,            &
             delim=del, position=pos, action=act, status=stat, iostat=rc)
    endif
-else  
-   ! unformatted file - again, only pass in recl if required 
+else
+   ! unformatted file - again, only pass in recl if required
    if (use_recl) then
       open (iunit, file=trim(fname), form=format, access=acc, recl=rlen, &
             convert=conversion, position=pos, action=act, status=stat, iostat=rc)
@@ -979,7 +979,7 @@ else
             convert=conversion, position=pos, action=act, status=stat, iostat=rc)
    endif
 endif
-if (rc /= 0 .and. print_debug) call dump_unit_attributes(iunit) 
+if (rc /= 0 .and. print_debug) call dump_unit_attributes(iunit)
 
 if (present(return_rc)) then
    return_rc = rc
@@ -1082,7 +1082,7 @@ end function ascii_file_format
 !-----------------------------------------------------------------------
 !>@todo FIXME:  nsc opinion:
 !> 1. this routine should NOT support 'end' anymore.  the calling code
-!>    should call finalize_utilities() directly.  
+!>    should call finalize_utilities() directly.
 !> 2. 'brief' format should be the default (easier to grep for and to
 !>     sed for postprocessing)
 !> 3. write_time() should be able to take a string to write into
@@ -1104,11 +1104,11 @@ subroutine timestamp(string1,string2,string3,pos)
       call finalize_utilities()
 
    else if (pos == 'brief') then
-      call log_time (logfileunit, brief=.true., & 
+      call log_time (logfileunit, brief=.true., &
                      string1=string1, string2=string2, string3=string3)
-       
+
    else
-      call log_time (logfileunit, & 
+      call log_time (logfileunit, &
                      string1=string1, string2=string2, string3=string3)
    endif
 
@@ -1183,7 +1183,7 @@ logical :: oneline
 call DATE_AND_TIME(cdate, ctime, zone, values)
 
 ! give up if no good values were returned
-if (.not. any(values /= -HUGE(0)) ) return 
+if (.not. any(values /= -HUGE(0)) ) return
 
 lunit = 6   ! normal fortran output unit
 if (present(unit)) lunit = unit
@@ -1210,7 +1210,7 @@ else
       write(lunit,*) label // '... at YYYY MM DD HH MM SS = '
    else
       write(lunit,*) 'Time is  ... at YYYY MM DD HH MM SS = '
-   endif 
+   endif
    write(lunit,'(17x,i4,5(1x,i2))') values(1), values(2), &
              values(3),  values(5), values(6), values(7)
 
@@ -1230,7 +1230,7 @@ endif
 end subroutine write_time
 
 !-----------------------------------------------------------------------
-!> set whether output is written to a log file or simply ignored 
+!> set whether output is written to a log file or simply ignored
 !>
 !>   in:  doflag  = whether to output log information or not
 
@@ -1250,7 +1250,7 @@ if ( .not. module_initialized ) call initialize_utilities
 end subroutine set_output
 
 !-----------------------------------------------------------------------
-!> return whether output should be written from this task 
+!> return whether output should be written from this task
 
 function do_output ()
 
@@ -1265,7 +1265,7 @@ end function do_output
 !-----------------------------------------------------------------------
 !> set whether nml output is written to stdout file or only nml file
 !>
-!>    in:  doflag  = whether to output nml information to stdout 
+!>    in:  doflag  = whether to output nml information to stdout
 
 subroutine set_nml_output (nmlstring)
 
@@ -1286,7 +1286,7 @@ select case (nmlstring)
       nml_flag = NML_FILE
       call error_handler(E_MSG, 'set_nml_output', &
                          'Echo NML values to log file only')
-  
+
    case ('TERMINAL', 'terminal')
       nml_flag = NML_TERMINAL
       call error_handler(E_MSG, 'set_nml_output', &
@@ -1300,13 +1300,13 @@ select case (nmlstring)
    case default
       call error_handler(E_ERR, 'set_nml_output', &
                         'unrecognized input string: '//trim(nmlstring), source)
- 
+
 end select
 
 end subroutine set_nml_output
 
 !-----------------------------------------------------------------------
-!> for multiple-task jobs, set the task number for error msgs 
+!> for multiple-task jobs, set the task number for error msgs
 !>
 !>    in:  tasknum  = task number, 0 to N-1
 
@@ -1316,7 +1316,7 @@ integer, intent(in) :: tasknum
 
 if ( .not. module_initialized ) call initialize_utilities
 
-single_task = .false. 
+single_task = .false.
 task_number = tasknum
 
 end subroutine set_tasknum
@@ -1333,7 +1333,7 @@ use netcdf
 integer, intent (in)                   :: istatus
 character(len=*), intent(in)           :: subr_name
 character(len=*), intent(in), optional :: context
-  
+
 ! if no error, nothing to do here.  we are done.
 if(istatus == nf90_noerr) return
 
@@ -1348,9 +1348,9 @@ else
    msgstring1 = nf90_strerror(istatus)
 endif
 
-! this does not return 
+! this does not return
 call error_handler(E_ERR, 'nc_check', msgstring1, source, text2=subr_name)
-  
+
 end subroutine nc_check
 
 
@@ -1448,7 +1448,7 @@ end subroutine find_textfile_dims
 
 !-----------------------------------------------------------------------
 !> Reads a text file into a character variable.
-!> Initially needed to read a namelist file into a variable that could 
+!> Initially needed to read a namelist file into a variable that could
 !> then be inserted into a netCDF file. Due to a quirk in the way Fortran
 !> and netCDF play together, I have not figured out how to dynamically
 !> create the minimal character length ... so any line longer than
@@ -1491,7 +1491,7 @@ do i = 1,mynlines
       call error_handler(E_ERR,'file_to_text', trim(string), source)
    endif
 
-enddo 
+enddo
 
 call close_file(funit)
 
@@ -1533,7 +1533,7 @@ call close_file(funit)
 ! @todo FIXME define 256 as a constant - MAXFILENAMELEN or something
 if (len_trim(adjustl(string)) > 256) then
    call error_handler(E_ERR, 'get_next_filename', &
-                      'maximum filename length of 256 exceeded', source)   
+                      'maximum filename length of 256 exceeded', source)
 endif
 
 
@@ -1543,14 +1543,14 @@ end function get_next_filename
 
 
 !-----------------------------------------------------------------------
-!> this function is intended to be used when there are 2 ways to specify 
+!> this function is intended to be used when there are 2 ways to specify
 !> an unknown number of input files, most likely in a namelist.
 !>
 !> e.g. to specify 3 input files named 'file1', 'file2', 'file3' you can
 !> either give:
-!>   input_files = 'file1', 'file2', 'file3' 
+!>   input_files = 'file1', 'file2', 'file3'
 !>     OR
-!>   input_file_list = 'flist'  
+!>   input_file_list = 'flist'
 !>
 !>   and the contents of text file 'flist' are (e.g. 'cat flist' gives)
 !>          file1
@@ -1599,7 +1599,7 @@ if (name_array(1) == '' .and. listname == '') then
           'must specify either filenames in the namelist, or a filename containing a list of names', &
           source)
 endif
-   
+
 ! make sure the namelist specifies one or the other but not both
 if (name_array(1) /= '' .and. listname /= '') then
    call error_handler(E_ERR, caller_name, &
@@ -1617,7 +1617,7 @@ else
    from_file = .false.
 endif
 
-! the max number of names allowed in a list file is the 
+! the max number of names allowed in a list file is the
 ! size of the name_array passed in by the user.
 max_num_input_files = size(name_array)
 
@@ -1637,7 +1637,7 @@ do fileindex = 1, max_num_input_files
                             source,text2=msgstring2,text3=msgstring3)
       endif
 
-      ! at the end of the list. return how many filenames were found, 
+      ! at the end of the list. return how many filenames were found,
       ! whether the source was the name_array or the listname.
       set_filename_list = fileindex - 1
       return
@@ -1663,13 +1663,13 @@ set_filename_list = max_num_input_files
 end function set_filename_list
 
 !-----------------------------------------------------------------------
-!> this function is intended to be used when there are 2 ways to specify 
+!> this function is intended to be used when there are 2 ways to specify
 !> a KNOWN number of input files, most likely in a namelist.
 !>
-!> e.g. to specify 6 input files named 'file1a', 'file2a', 'file3a', 
-!>                                     'file1b', 'file2b', 'file3b', 
+!> e.g. to specify 6 input files named 'file1a', 'file2a', 'file3a',
+!>                                     'file1b', 'file2b', 'file3b',
 !> either give:
-!>   input_files = 'file1a', 'file2a', 'file3a', 'file1b', 'file2b', 'file3b', 
+!>   input_files = 'file1a', 'file2a', 'file3a', 'file1b', 'file2b', 'file3b',
 !>     OR
 !>   input_file_list = 'flistA', 'flistB'
 !>
@@ -1729,7 +1729,7 @@ if (name_array(1) == '' .and. listname(1) == '') then
           text2='must specify either "'//trim(origin)//'" in the namelist,', &
           text3='or a "'//trim(origin_list)//'" file containing a list of names')
 endif
-   
+
 ! make sure the namelist specifies one or the other but not both
 if (name_array(1) /= '' .and. listname(1) /= '') then
    call error_handler(E_ERR, caller_name, &
@@ -1763,8 +1763,8 @@ if (from_file) then
       call error_handler(E_ERR, caller_name, msgstring1, source, text2=msgstring2)
    endif
 endif
-   
-! the max number of names allowed in a list file is the 
+
+! the max number of names allowed in a list file is the
 ! size of the name_array passed in by the user.
 max_num_input_files = size(name_array)
 if (max_num_input_files < nlists * nentries) then
@@ -1783,7 +1783,7 @@ do nl = 1, nlists
 
       if (from_file) &
          name_array(fileindex) = get_next_filename(listname(nl), ne)
-   
+
       if (name_array(fileindex) == '') then
          write(msgstring1, *) 'Missing filename for domain number ',nl,' file number ',ne
 
@@ -1797,7 +1797,7 @@ do nl = 1, nlists
 
          call error_handler(E_ERR, caller_name, trim(msgstring1)//trim(fsource), &
                             source,text2=msgstring2,text3=msgstring3)
-   
+
       endif
    enddo
 enddo
@@ -1894,7 +1894,7 @@ if (ifile == 1) then ! First time through ... find things.
          dir_base   = dir_name(1:splitindex-1)
          dir_ext    = dir_name(splitindex+1:slashindex-1)
          dir_prec   = slashindex - splitindex - 1
-    
+
          read(dir_ext,*,iostat=ios) filenum
          if(ios /= 0) then
             ! Directory has an '_' separating two alphabetic parts
@@ -1907,7 +1907,7 @@ if (ifile == 1) then ! First time through ... find things.
 
       filenum  = -1 ! indicates no next file
 
-   endif 
+   endif
 
 else
 
@@ -1950,7 +1950,7 @@ end function next_file
 !>  returns true if lon is between min and max, starting at min
 !>  and going EAST until reaching max.  wraps across 0 longitude.
 !>  if min == max, all points are inside.  includes edges.
-!>  if optional arg doradians is true, do computation in radians 
+!>  if optional arg doradians is true, do computation in radians
 !>  between 0 and 2*PI instead of 360.   if given, return the
 !>  'lon' value possibly + 360 (or 2PI) which can be used for averaging
 !>  or computing on a consistent set of longitude values.  after the
@@ -1976,10 +1976,10 @@ endif
 minl = modulo(minlon, circumf)
 maxl = modulo(maxlon, circumf)
 
-! boundary points are included in the valid region so if min=max 
+! boundary points are included in the valid region so if min=max
 ! the 'region' is the entire globe and you can return early.
 if (minl == maxl) then
-   is_longitude_between = .true. 
+   is_longitude_between = .true.
    if (present(newlon)) newlon = lon
    return
 endif
@@ -1988,16 +1988,16 @@ endif
 lon2  = modulo(lon, circumf)
 
 ! here's where the magic happens:
-! minl will be bigger than maxl if the region of interest crosses the prime 
-! meridian (longitude = 0).  in this case add one circumference to the 
-! eastern boundary so maxl is guarenteed to be larger than minl (and valid 
-! values are now between 0 and 2 circumferences).  
+! minl will be bigger than maxl if the region of interest crosses the prime
+! meridian (longitude = 0).  in this case add one circumference to the
+! eastern boundary so maxl is guarenteed to be larger than minl (and valid
+! values are now between 0 and 2 circumferences).
 !
 ! if the test point longitude is west of the minl boundary add one circumference
-! to it as well before testing against the bounds.  values that were east of 
-! longitude 0 but west of maxl will now be shifted so they are again correctly 
-! within the new range; values that were west of the prime meridian but east 
-! of minl will stay in range; values west of minl and east of maxl will be 
+! to it as well before testing against the bounds.  values that were east of
+! longitude 0 but west of maxl will now be shifted so they are again correctly
+! within the new range; values that were west of the prime meridian but east
+! of minl will stay in range; values west of minl and east of maxl will be
 ! correctly shifted out of range.
 
 if (minl > maxl) then
@@ -2007,7 +2007,7 @@ endif
 
 is_longitude_between = ((lon2 >= minl) .and. (lon2 <= maxl))
 
-! if requested, return the value that was tested against the bounds, which 
+! if requested, return the value that was tested against the bounds, which
 ! will always be between 0 and 2 circumferences and monotonically increasing
 ! from minl to maxl.  if the region of interest doesn't cross longitude 0
 ! this value will be the same as the input value.  if the region does
@@ -2020,7 +2020,7 @@ is_longitude_between = ((lon2 >= minl) .and. (lon2 <= maxl))
 
 if (present(newlon)) newlon = lon2
 
-end function is_longitude_between 
+end function is_longitude_between
 
 
 !-----------------------------------------------------------------------
@@ -2029,7 +2029,7 @@ end function is_longitude_between
 pure function to_scalar_real(x)
  real(r8), intent(in) :: x(1)
  real(r8) :: to_scalar_real
- 
+
 to_scalar_real = x(1)
 
 end function to_scalar_real
@@ -2040,7 +2040,7 @@ end function to_scalar_real
 pure function to_scalar_int4(x)
  integer(i4), intent(in) :: x(1)
  integer(i4) :: to_scalar_int4
- 
+
 to_scalar_int4 = x(1)
 
 end function to_scalar_int4
@@ -2051,7 +2051,7 @@ end function to_scalar_int4
 pure function to_scalar_int8(x)
  integer(i8), intent(in) :: x(1)
  integer(i8) :: to_scalar_int8
- 
+
 to_scalar_int8 = x(1)
 
 end function to_scalar_int8
@@ -2123,10 +2123,10 @@ select case (ucase_instring)
       string_to_logical = .true.
    case ("FALSE", ".FALSE.", "F")
       string_to_logical = .false.
-   case default 
+   case default
       ! we can't give any context here for where it was
       ! being called, but if it isn't true or false, error out.
-      msgstring1 = '.TRUE., TRUE, T or .FALSE., FALSE, F are valid values'         
+      msgstring1 = '.TRUE., TRUE, T or .FALSE., FALSE, F are valid values'
       call error_handler(E_ERR,'string_to_logical', &
                  'Cannot parse true or false value from string: "'//trim(inputstring)//'"', &
                   source, text2=msgstring1)
@@ -2138,7 +2138,7 @@ end function string_to_logical
 
 !-----------------------------------------------------------------------
 !> dump the contents of a 1d array with a max of N items per line.
-!> optional arguments allow the caller to restrict the output to 
+!> optional arguments allow the caller to restrict the output to
 !> no more than X items, to write to an open file unit, and to
 !> write a text label before the numerical dump.
 !>
@@ -2179,7 +2179,7 @@ end subroutine array_1d_dump
 
 !-----------------------------------------------------------------------
 !> dump the contents of a 2d array with a max of N items per line.
-!> optional arguments allow the caller to restrict the output to 
+!> optional arguments allow the caller to restrict the output to
 !> no more than X items, to write to an open file unit, and to
 !> write a text label before the numerical dump.
 !>
@@ -2225,7 +2225,7 @@ end subroutine array_2d_dump
 
 !-----------------------------------------------------------------------
 !> dump the contents of a 3d array with a max of N items per line.
-!> optional arguments allow the caller to restrict the output to 
+!> optional arguments allow the caller to restrict the output to
 !> no more than X items, to write to an open file unit, and to
 !> write a text label before the numerical dump.
 !>
@@ -2276,7 +2276,7 @@ end subroutine array_3d_dump
 
 !-----------------------------------------------------------------------
 !> dump the contents of a 4d array with a max of N items per line.
-!> optional arguments allow the caller to restrict the output to 
+!> optional arguments allow the caller to restrict the output to
 !> no more than X items, to write to an open file unit, and to
 !> write a text label before the numerical dump.
 !>
@@ -2334,7 +2334,7 @@ end subroutine array_4d_dump
 !> given an array of sorted values and a value to find, return the
 !> two indices that enclose that value, and the fraction between.
 !>
-!> fraction_across = 0.0 is the 100% the smaller index value, 
+!> fraction_across = 0.0 is the 100% the smaller index value,
 !>                   1.0 is the 100% the larger index value.
 !>
 !> if the array values are inverted (e.g. index 1 is the largest value),
@@ -2348,7 +2348,7 @@ end subroutine array_4d_dump
 !> with these indices giving the sorted order.  the order of the values
 !> cannot be inverted!  use either indirect addressing or inverted but
 !> not both.
-!> 
+!>
 !> my_status values:
 !>   0 = good return
 !>  -1 = value_to_find is below smallest value
@@ -2371,7 +2371,7 @@ end subroutine array_4d_dump
 !>   if (istat /= 0) return
 !>   value = data_on_heights(low_i)  * (1.0 - fract) + &
 !>           data_on_heights(high_i) * fract
-!>          
+!>
 !> FIXME:
 !> added to the utilities module, but this module should be split into
 !> smaller modules because right now it's a dumping ground for every
@@ -2437,7 +2437,7 @@ else
    lowest_i  = nitems
    highest_i = 1
 endif
-   
+
 ! get limits so we can easily discard out of range values
 smaller_data  = data_array(lowest_i)
 larger_data   = data_array(highest_i)
@@ -2475,7 +2475,7 @@ do
    else
       i=k
    endif
-   
+
    if (i+1 >= j) exit
 enddo
 
@@ -2490,7 +2490,7 @@ else if (one_is_smallest) then
    larger_index  = i+1
 else
    smaller_index = i+1
-   larger_index  = i       
+   larger_index  = i
 endif
 
 ! use the indices to look up the corresponding data values
@@ -2539,13 +2539,13 @@ end subroutine find_enclosing_indices
 !>  first index value that is less than or equal to the target.
 !>
 !> if the array values are inverted (e.g. index 1 is the largest value),
-!> set inverted = .true. 
+!> set inverted = .true.
 !>
 !> if indirect_indices specified, use as indirect indices into data_array,
 !> with these indices giving the sorted order.  return index will be the
 !> direct index into the data_array.  to also return the index into the
 !> indirect array, specify the_indirect_index in the arg list.
-!>  
+!>
 !> note that you cannot specify both inverted and indirect.
 !>
 !> my_status values:
@@ -2579,7 +2579,7 @@ end subroutine find_enclosing_indices
 !>      print *, 'largest value still less than ', value_to_find, ' in array at index ', this_index
 !>      print *, 'is value ', unsorted_array(this_index)
 !>   endif
-!>          
+!>
 
 !>@todo FIXME - do we need an integer version of this?  (i think yes)
 !>    possibly also a character version for arrays of strings.
@@ -2671,7 +2671,7 @@ else
    lowest_i  = nitems
    highest_i = 1
 endif
-   
+
 ! get limits so we can easily discard out of range values
 smallest_data  = data_array(lowest_i)
 largest_data   = data_array(highest_i)
@@ -2693,7 +2693,7 @@ if (value_to_find == largest_data) then
    my_status = 0
    return
 endif
- 
+
 ! bisection search:
 ! because input must be in sorted order take the middle
 ! index each time and shift the lower or upper index
@@ -2721,9 +2721,9 @@ do
    if (i+1 >= j) exit
 enddo
 
-! always return the index directly into the incoming data array.  
-! if requested and there are indirect indices also return the indirect 
-! array index number.  the former makes it easy to access the data directly.  
+! always return the index directly into the incoming data array.
+! if requested and there are indirect indices also return the indirect
+! array index number.  the former makes it easy to access the data directly.
 ! the latter makes it possible to move forward and back in numeric order.
 if (.not. direct) then
    the_index = indirect_indices(i)
@@ -2752,7 +2752,7 @@ end subroutine find_first_occurrence
 
 subroutine dump_varkinds()
 
-! declare these without an indicated KIND so we can print out 
+! declare these without an indicated KIND so we can print out
 ! what default variable sizes are.  this can be changed by the
 ! user at compile time so these are out of our control.  this is
 ! why in our code we always specify (r8) for reals.  we usually
@@ -2762,7 +2762,7 @@ subroutine dump_varkinds()
 integer :: idummy
 real    :: rdummy
 
-call log_it('') ! whitespace 
+call log_it('') ! whitespace
 
 write(msgstring1,*) 'compiler KIND for  real     is ',kind(rdummy)
 call log_it(msgstring1)
@@ -2776,9 +2776,9 @@ call log_it(msgstring1)
 write(msgstring1,*) 'compiler KIND for  digits12 is ',digits12
 call log_it(msgstring1)
 
-call log_it('') ! whitespace 
+call log_it('') ! whitespace
 
-write(msgstring1,*) 'compiler KIND for  integer  is ',kind(idummy) 
+write(msgstring1,*) 'compiler KIND for  integer  is ',kind(idummy)
 call log_it(msgstring1)
 
 write(msgstring1,*) 'compiler KIND for  i2       is ',i2
@@ -2790,15 +2790,15 @@ call log_it(msgstring1)
 write(msgstring1,*) 'compiler KIND for  i8       is ',i8
 call log_it(msgstring1)
 
-call log_it('') ! whitespace 
+call log_it('') ! whitespace
 
 end subroutine dump_varkinds
- 
+
 !-----------------------------------------------------------------------
 !>  Useful for dumping all the attributes for a file 'unit'
 !>  A debugging routine. TJH Oct 2004
 
-subroutine dump_unit_attributes(iunit) 
+subroutine dump_unit_attributes(iunit)
 
 integer, intent(in) :: iunit
 
@@ -2870,7 +2870,7 @@ call output_unit_attribs(ios, 'pad', ynu)
 end subroutine dump_unit_attributes
 
 !-----------------------------------------------------------------------
-!> fairly specialized routine to output the results 
+!> fairly specialized routine to output the results
 !> of a file inquire call from dump_unit_attributes
 
 
@@ -2945,7 +2945,7 @@ elseif (present(minvalue)) then
 elseif (present(maxvalue)) then
 
    interactive_r = maxvalue + 1.0_r8
-   MAXLOOP : do while (interactive_r > maxvalue) 
+   MAXLOOP : do while (interactive_r > maxvalue)
       write(*, *) 'Enter '//str1
       read( *, *) interactive_r
    end do MAXLOOP

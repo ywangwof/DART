@@ -16,7 +16,7 @@ use  utilities_mod,       only : file_exist, get_unit, check_namelist_read, do_o
                                  find_namelist_in_file, error_handler,   &
                                  E_ERR, E_MSG, nmlfileunit, do_nml_file, do_nml_term,     &
                                  open_file, close_file, timestamp
-use       sort_mod,       only : index_sort 
+use       sort_mod,       only : index_sort
 use random_seq_mod,       only : random_seq_type, random_gaussian, init_random_seq,       &
                                  random_uniform
 
@@ -386,6 +386,9 @@ allocate(close_state_dist(     ens_handle%my_num_vars), &
          my_state_loc(         ens_handle%my_num_vars))
 ! end alloc
 
+!write(msgstring, '(A)') 'Entering filter_assim'
+!call error_handler(E_MSG,'WYH:filter_assim:',msgstring)
+
 ! Initialize assim_tools_module if needed
 if (.not. module_initialized) call assim_tools_init()
 
@@ -423,6 +426,9 @@ local_obs_inflate        = do_obs_inflate(inflate)
 
 ! Default to printing nothing
 nth_obs = -1
+
+!write(msgstring, '(2(A,I0))') 'Before ens_size=',ens_size,', num_groups = ',num_groups
+!call error_handler(E_MSG,'WYH:filter_assim:',msgstring)
 
 ! Divide ensemble into num_groups groups.
 ! make sure the number of groups and ensemble size result in
@@ -463,6 +469,8 @@ end if
 my_num_obs = get_my_num_vars(obs_ens_handle)
 call get_my_vars(obs_ens_handle, my_obs_indx)
 
+!write(0,*) 'WYH:my_num_obs=',my_num_obs
+
 ! Construct an observation temporary
 call init_obs(observation, get_num_copies(obs_seq), get_num_qc(obs_seq))
 
@@ -483,12 +491,14 @@ if (convert_all_obs_verticals_first .and. is_doing_vertical_conversion) then
             if (vstatus(i) /= 0) obs_ens_handle%copies(OBS_GLOBAL_QC_COPY, i) = DARTQC_FAILED_VERT_CONVERT
          endif
       enddo
-   endif 
+   endif
 endif
 
 ! Get info on my number and indices for state
 my_num_state = get_my_num_vars(ens_handle)
 call get_my_vars(ens_handle, my_state_indx)
+
+!write(0,*) 'WYH:after my_num_state=',my_num_state
 
 ! Get the location and kind of all my state variables
 do i = 1, ens_handle%my_num_vars
@@ -514,6 +524,8 @@ if(local_ss_inflate) then
    end do
 endif
 
+!write(0,*) 'WYH:after local_ss_inflate=',local_ss_inflate
+
 ! Initialize the method for getting state variables close to a given ob on my process
 if (has_special_cutoffs) then
    call get_close_init(gc_state, my_num_state, 2.0_r8*cutoff, my_state_loc, 2.0_r8*cutoff_list)
@@ -527,6 +539,8 @@ if (has_special_cutoffs) then
 else
    call get_close_init(gc_obs, my_num_obs, 2.0_r8*cutoff, my_obs_loc)
 endif
+
+!write(0,*) 'WYH:before close_obs_caching=',close_obs_caching
 
 if (close_obs_caching) then
    ! Initialize last obs and state get_close lookups, to take advantage below
@@ -544,6 +558,7 @@ endif
 
 allow_missing_in_state = get_missing_ok_status()
 
+!write(0,*) 'WYH:Before obs loop'
 ! Loop through all the (global) observations sequentially
 SEQUENTIAL_OBS: do i = 1, obs_ens_handle%num_vars
    ! Some compilers do not like mod by 0, so test first.
@@ -581,6 +596,8 @@ SEQUENTIAL_OBS: do i = 1, obs_ens_handle%num_vars
 
    ! Following block is done only by the owner of this observation
    !-----------------------------------------------------------------------
+   !write(0,*) 'WYH:before own=',owner, ens_handle%my_pe
+
    if(ens_handle%my_pe == owner) then
       ! each task has its own subset of all obs.  if they were converted in the
       ! vertical up above, then we need to broadcast the new values to all the other
@@ -620,7 +637,7 @@ SEQUENTIAL_OBS: do i = 1, obs_ens_handle%num_vars
    !-----------------------------------------------------------------------
    else
       call broadcast_recv(map_pe_to_task(ens_handle, owner), obs_prior,    &
-         orig_obs_prior_mean, orig_obs_prior_var,                          & 
+         orig_obs_prior_mean, orig_obs_prior_var,                          &
          scalar1=obs_qc, scalar2=vertvalue_obs_in_localization_coord,      &
          scalar3=whichvert_real, scalar4=my_inflate, scalar5=my_inflate_sd)
       whichvert_obs_in_localization_coord = nint(whichvert_real)
@@ -659,7 +676,7 @@ SEQUENTIAL_OBS: do i = 1, obs_ens_handle%num_vars
             orig_obs_prior_var(group), obs(1), obs_err_var, grp_size, inflate_only)
       end do
    endif
-  
+
    ! Adaptive localization needs number of other observations within localization radius.
    ! Do get_close_obs first, even though state space increments are computed before obs increments.
    call  get_close_obs_cached(gc_obs, base_obs_loc, base_obs_type,      &
@@ -689,6 +706,8 @@ SEQUENTIAL_OBS: do i = 1, obs_ens_handle%num_vars
       num_close_states_calls_made)
    !call test_close_obs_dist(close_state_dist, num_close_states, i)
 
+    !write(0,*) 'WYH:before state_update=',num_close_states
+
    ! Loop through to update each of my state variables that is potentially close
    STATE_UPDATE: do j = 1, num_close_states
       state_index = close_state_ind(j)
@@ -702,8 +721,11 @@ SEQUENTIAL_OBS: do i = 1, obs_ens_handle%num_vars
       final_factor = cov_and_impact_factors(base_obs_loc, base_obs_type, my_state_loc(state_index), &
          my_state_kind(state_index), close_state_dist(j), cutoff_rev)
 
+      !write(msgstring, '(4(A,I0))') 'after cov_and_impact_factors, j = ', j, '/',num_close_states,', i = ',i,'/',obs_ens_handle%num_vars
+      !call error_handler(E_MSG,'WYH:filter_assim:',msgstring)
+
       if(final_factor <= 0.0_r8) cycle STATE_UPDATE
-      
+
       call obs_updates_ens(ens_size, num_groups, ens_handle%copies(1:ens_size, state_index), &
          my_state_loc(state_index), my_state_kind(state_index), obs_prior, obs_inc, &
          obs_prior_mean, obs_prior_var, base_obs_loc, base_obs_type, obs_time, &
@@ -737,6 +759,9 @@ SEQUENTIAL_OBS: do i = 1, obs_ens_handle%num_vars
          ! Compute the covariance localization and adjust_obs_impact factors (module storage)
             final_factor = cov_and_impact_factors(base_obs_loc, base_obs_type, my_obs_loc(obs_index), &
             my_obs_kind(obs_index), close_obs_dist(j), cutoff_rev)
+
+            !write(msgstring, '(3(A,I0))') 'after  cov_and_impact_factors inflate_only, j = ', j, '/',num_close_obs,', i = ',i
+            !call error_handler(E_MSG,'WYH:filter_assim:',msgstring)
 
             if(final_factor <= 0.0_r8) cycle OBS_UPDATE
 

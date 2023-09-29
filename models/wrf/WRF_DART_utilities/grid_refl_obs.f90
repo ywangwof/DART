@@ -10,6 +10,7 @@ PROGRAM grid_refl_obs
 ! these observations on a WRF grid (mass grid points).
 !
 ! David Dowell 26 June 2007
+! Modifed Thomas Jones 201X
 !
 ! input parameters from command line:
 ! (1) obs_seq_file  -- path name of DART obs_seq.out file
@@ -17,8 +18,9 @@ PROGRAM grid_refl_obs
 ! (3) days_begin    -- start of time range to be processed
 ! (4) seconds_begin -- "                                 "
 ! (5) days_end      -- end of time range to be processed
-! (6) seconds_end   -- "                               "
-! (7) wrf_file      -- path name of WRF netcdf file
+! (6) seconds_end   -- "    
+! (7) refl_innov    -- Reflectivity difference between prior and obs to apply AN (TAJ)"
+! (8) wrf_file      -- path name of WRF netcdf file
 !
 ! output:
 ! (1) text file 
@@ -65,6 +67,7 @@ integer            :: seconds_begin
 integer            :: days_begin
 integer            :: seconds_end
 integer            :: days_end
+real(r8)           :: innov_thresh
 character(len=129) :: wrf_file
 
 ! local variables
@@ -84,8 +87,8 @@ integer :: num_refl_obs
 integer :: num_refl_obs_in_domain
 integer,  allocatable :: keys(:)
 integer :: obs_kind_ind
-integer :: obs_index
-real(r8) :: ob_value(1)
+integer :: obs_index, obs_index_prior
+real(r8) :: ob_value(1), ob_value_prior(1), innovation
 
 real(r8), allocatable :: lat(:,:)               ! latitude at mass grid points (deg)
 real(r8), allocatable :: lon(:,:)               ! longitude at mass grid points (deg)
@@ -115,12 +118,11 @@ character(len=80) :: varname
 integer :: status, length
 character(len=120) :: string
 
-
 call initialize_utilities('grid_refl_obs')
 
 ! Get command-line parameters, using the F2KCLI interface.  See f2kcli.f90 for details.
 
-if( COMMAND_ARGUMENT_COUNT() .ne. 7 ) then
+if( COMMAND_ARGUMENT_COUNT() .ne. 8 ) then
   print*, 'INCORRECT # OF ARGUMENTS ON COMMAND LINE:  ', COMMAND_ARGUMENT_COUNT()
   call exit(1)
 else
@@ -171,7 +173,15 @@ else
     read(string,*) seconds_end
   endif
   
-  call GET_COMMAND_ARGUMENT(7,wrf_file,length,status)
+  call GET_COMMAND_ARGUMENT(7,string,length,status)
+  if( status .ne. 0 ) then
+    print*,  'refl_innov NOT RETRIEVED FROM COMMAND LINE:  ', status
+    call exit(1)
+  else
+    read(string,*) innov_thresh
+  endif
+
+  call GET_COMMAND_ARGUMENT(8,wrf_file,length,status)
   if( status .ne. 0 ) then
     print*, 'wrf_file NOT RETRIEVED FROM COMMAND LINE:  ', status
     call exit(1)
@@ -318,6 +328,8 @@ call get_time_range_keys(seq, key_bounds, num_obs_in_time_period, keys)
 num_refl_obs = 0
 num_refl_obs_in_domain = 0
 
+print *, 'using innovation threshold of ', innov_thresh
+
 do o = 1, num_obs_in_time_period
 
   call get_obs_from_key(seq, keys(o), ob)
@@ -332,7 +344,8 @@ do o = 1, num_obs_in_time_period
 !   xyz_loc(1) is longitude,  xyz_loc(2) is latitude,  xyz_loc(3) is height
     xyz_loc = get_location(ob_loc)
     call latlon_to_ij(proj,xyz_loc(2),xyz_loc(1),iloc,jloc)
-    if ( (iloc >= 1 .and. iloc <= we .and. jloc >= 1 .and. jloc <= sn) ) then
+!    if ( (iloc >= 1 .and. iloc <= we .and. jloc >= 1 .and. jloc <= sn) ) then
+    if ( (iloc >= 10 .and. iloc <= we-9 .and. jloc >= 10 .and. jloc <= sn-9) ) then
 
       i = nint(iloc)
       j = nint(jloc)
@@ -349,8 +362,16 @@ do o = 1, num_obs_in_time_period
 
         num_refl_obs_in_domain = num_refl_obs_in_domain + 1
         call get_obs_values(ob, ob_value, obs_index)
+        obs_index_prior = 2
+        call get_obs_values(ob, ob_value_prior, obs_index_prior)
         if ( (refl_ob(i,j,k).eq.missing_r8) .or. (ob_value(1).gt.refl_ob(i,j,k)) ) then
-          refl_ob(i,j,k) = ob_value(1)
+           ! RAS: added innovation check
+!          innovation = abs(ob_value(1) - ob_value_prior(1))
+           innovation = ob_value(1) - ob_value_prior(1)
+           if ( (innovation .gt. innov_thresh) ) then
+              refl_ob(i,j,k) = ob_value(1)
+           endif
+ 
         endif
 
       endif

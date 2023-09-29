@@ -1,27 +1,27 @@
 
 &ncepobs_nml
-   year       = 2007,
-   month      = 1,
-   day        = 1,
-   tot_days   = 31,
+   year       = 2022,
+   month      = 5,
+   day        = 10,
+   tot_days   = 1,
    max_num    = 800000,
    select_obs = 0,
-   ObsBase = '../../prep_bufr/data/temp_obs.',
-   include_specific_humidity = .true.,
+   ObsBase = '/scratch/home/Thomas.Jones/WOFS_DART/DART_2023/observations/obs_converters/NCEP/prep_bufr/work/data/temp_obs.',
+   include_specific_humidity = .false.,
    include_relative_humidity = .false.,
-   include_dewpoint = .false.,
-   ADPUPA = .false., 
+   include_dewpoint = .true.,
+   ADPUPA = .true., 
    AIRCAR = .false., 
    AIRCFT = .false., 
    SATEMP = .false., 
    SFCSHP = .false., 
-   ADPSFC = .false., 
+   ADPSFC = .true., 
    SATWND = .false.,
-   obs_U  = .false., 
-   obs_V  = .false., 
-   obs_T  = .false.,
-   obs_PS = .false.,
-   obs_QV = .false.,
+   obs_U  = .true., 
+   obs_V  = .true., 
+   obs_T  = .true.,
+   obs_PS = .true.,
+   obs_QV = .true.,
    daily_file = .true.,
    lon1   =   0.0,
    lon2   = 360.0,
@@ -30,44 +30,44 @@
   /
 
 &prepbufr_to_obs_nml
-   startyear     = 2010,
-   startmonth    = 12,
-   startday      = 01,
-   starthour     = 00
-   endyear       = 2010,
-   endmonth      = 12,
-   endday        = 02,
-   endhour       = 00
+   startyear     = 2022,
+   startmonth    = 05,
+   startday      = 10,
+   starthour     = 18
+   endyear       = 2022,
+   endmonth      = 05,
+   endday        = 10,
+   endhour       = 18
    windowdays    = 0,
-   windowhours   = 6
+   windowhours   = 1
    windowseconds = 0
    midnight_24   = .true.
-   input_filename_base     = '/glade/p/cisl/dares/Observations/bufr/prepout/temp_obs.',
+   input_filename_base     = '/scratch/home/Thomas.Jones/WOFS_DART/DART_2023/observations/obs_converters/NCEP/prep_bufr/work/data/temp_obs.',
    input_filename_pattern  = '(A,I4.4,3(I2.2))'
-   output_filename_base    = 'obs_seq/obs_seq',
+   output_filename_base    = 'obs_seq.',
    output_filename_pattern = '(A,I4.4,3(I2.2))'
    max_num_obs = 10000000,
    select_obs = .false.,
-   ADPUPA = .false.,
+   ADPUPA = .true.,
    AIRCAR = .false.,
    AIRCFT = .false.,
    SATEMP = .false.,
    SFCSHP = .false.,
-   ADPSFC = .false.,
+   ADPSFC = .true.,
    SATWND = .false.,
-   obs_U  = .false.,
-   obs_V  = .false.,
-   obs_T  = .false.,
-   obs_PS = .false.,
-   obs_QV = .false.,
+   obs_U  = .true.,
+   obs_V  = .true.,
+   obs_T  = .true.,
+   obs_PS = .true.,
+   obs_QV = .true.,
    include_specific_humidity = .true.,
    include_relative_humidity = .false.,
-   include_dewpoint = .false.,
+   include_dewpoint = .true.,
    lon1   =   0.0,
    lon2   = 360.0,
    lat1   = -90.0,
    lat2   =  90.0
-   print_timestamps = .false.,
+   print_timestamps = .true.,
    print_every_Nth = 200000,
    debug = .false.
   /
@@ -108,6 +108,7 @@
    obs_type_files          = '../../../../../observations/forward_operators/obs_def_reanalysis_bufr_mod.f90',
                              '../../../../../observations/forward_operators/obs_def_altimeter_mod.f90',
                              '../../../../../observations/forward_operators/obs_def_gps_mod.f90',
+                             '../../../../../observations/forward_operators/obs_def_metar_mod.f90',
                              '../../../../../observations/forward_operators/obs_def_dew_point_mod.f90',
                              '../../../../../observations/forward_operators/obs_def_rel_humidity_mod.f90'
   /

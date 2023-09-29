@@ -18,29 +18,22 @@ use    utilities_mod, only : initialize_utilities, register_module,            &
 implicit none
 
 ! version controlled file description for error handling, do not edit
-character(len=256), parameter :: source   = &
-   "$URL$"
+character(len=256), parameter :: source   = "$URL$"
 character(len=32 ), parameter :: revision = "$Revision$"
 character(len=128), parameter :: revdate  = "$Date$"
 
 type(obs_sequence_type) :: seq
 
 character(len = 256) :: output_name
-character(len = 8 ) :: obsdate
-integer :: iunit, io, ii, day1, kkk, kbeg, kend
-
-character(len = 2) :: obstime(4), hour1
-data obstime/'06','12','18','24'/
-
-real(r8) :: bin_beg(5), bin_end(5)
-data bin_beg/ 3.001_r8,  9.001_r8, 15.001_r8, 21.001_r8,  3.001_r8/
-data bin_end/ 9.000_r8, 15.000_r8, 21.000_r8, 27.000_r8, 27.000_r8/
+character(len = 10 ) :: obsdate
+integer :: iunit, io, ii
+real(r8) :: bbb, eee, delt
 
 ! ----------------------------------------------------------------------
 ! Declare namelist parameters
 ! ----------------------------------------------------------------------
         
-integer :: year = 2003, month =1, day =1, tot_days = 31
+integer :: year = 2003, month =1, day =1, hour=0, tot_days = 31
 integer :: max_num = 800000, select_obs = 0
 character(len = 256) :: ObsBase = 'temp_obs.'
 logical :: ADPUPA = .false., AIRCAR = .false., AIRCFT = .false., &
@@ -59,9 +52,9 @@ real(r8) :: lon1 =   0.0_r8,  &   !  lower longitude bound
 logical  :: include_specific_humidity = .true.,  &
             include_relative_humidity = .false., &
             include_dewpoint          = .false., &
-            include_surface_pressure  = .false.
+            include_surface_pressure  = .true.
 
-namelist /ncepobs_nml/ year, month, day, tot_days, max_num, select_obs,  &
+namelist /ncepobs_nml/ year, month, day, hour, tot_days, max_num, select_obs,  &
         ObsBase, ADPUPA, AIRCAR, AIRCFT, SATEMP, SFCSHP, ADPSFC, SATWND, &
         obs_U, obs_V, obs_T, obs_PS, obs_QV, obs_Z, daily_file, lon1, lon2, & 
         lat1, lat2, obs_time, include_specific_humidity, &
@@ -82,12 +75,10 @@ namelist /ncepobs_nml/ year, month, day, tot_days, max_num, select_obs,  &
 ! ----------------------------------------------------------------------
 
 ! start of executable program code
-
 call initialize_utilities('create_real_obs')
 call register_module(source,revision,revdate)
 
 ! Initialize the obs_sequence module ...
-
 call static_init_obs_sequence()
 
 ! Read the namelist entry
@@ -99,49 +90,34 @@ call check_namelist_read(iunit, io, "ncepobs_nml")
 if (do_nml_file()) write(nmlfileunit, nml=ncepobs_nml)
 if (do_nml_term()) write(     *     , nml=ncepobs_nml)
 
-! Loop through the days interested.
-
-do ii = 1, tot_days
- 
-  day1 = day + ii - 1
 
   ! define observation filename
-  write(obsdate, '(i4.4,i2.2,i2.2)') year, month, day1
+  write(obsdate, '(i4.4,i2.2,i2.2,i2.2)') year, month, day, hour
+   
+!   bbb=0.0
+!   eee=24.0 
 
-  ! set the obs sequence of the day (daily or 6 hourly)
-  if(daily_file) then
-    kbeg = 5
-    kend = 5
-    output_name = 'obs_seq'//obsdate
-  else
-    kbeg = 1
-    kend = 4
-  endif
+    delt = 0.25 !15 minutes
+    eee=real(hour) + delt 
+    bbb=real(hour) - delt
 
-  do kkk = kbeg, kend
-
-    if (daily_file) then
-      hour1 = ''
-    else
-      hour1 = obstime(kkk)
-    end if
-
-    seq = real_obs_sequence(year, month, day1, hour1, max_num, select_obs, &
+    seq = real_obs_sequence(year, month, day, hour, max_num, select_obs, &
          ObsBase, ADPUPA, AIRCAR, AIRCFT, SATEMP, SFCSHP, ADPSFC, SATWND, &
          obs_U, obs_V, obs_T, obs_PS, obs_QV, obs_Z, include_specific_humidity, &
          include_relative_humidity, include_dewpoint, include_surface_pressure, &
-         bin_beg(kkk), bin_end(kkk), lon1, lon2, lat1, lat2, obs_time)
+         bbb, eee, lon1, lon2, lat1, lat2, obs_time)
 
     ! output the daily sequence to a file
-    if(.not. daily_file) output_name = 'obs_seq'//obsdate//obstime(kkk)
+    !output_name = 'obs_seq.'//obsdate
+    output_name = 'obs_seq.bufr'
+
+    print*, output_name
+
     call write_obs_seq(seq, output_name)
 
+    print*, 'I GOT HERE 4:'
     ! release the memory of the seq.
     call destroy_obs_sequence(seq)
-
-  enddo
-
-enddo
 
 call error_handler(E_MSG,'create_real_obs','Finished successfully.',source,revision,revdate)
 call finalize_utilities()
