@@ -93,7 +93,7 @@
 
 &assim_tools_nml
    filter_kind                     = 1
-   cutoff                          = 0.10
+   cutoff                            = 0.0015
    distribute_mean                 = .false.
    convert_all_obs_verticals_first   = .true.
    convert_all_state_verticals_first = .false.
@@ -151,8 +151,30 @@
                                 'ACARS_U_WIND_COMPONENT',
                                 'ACARS_V_WIND_COMPONENT',
                                 'ACARS_TEMPERATURE',
-                                'SAT_U_WIND_COMPONENT',
-                                'SAT_V_WIND_COMPONENT',
+                                'METAR_ALTIMETER',
+                                'METAR_U_10_METER_WIND',
+                                'METAR_V_10_METER_WIND',
+                                'METAR_TEMPERATURE_2_METER',
+                                'METAR_DEWPOINT_2_METER',
+                                'MARINE_SFC_U_WIND_COMPONENT',
+                                'MARINE_SFC_V_WIND_COMPONENT',
+                                'MARINE_SFC_TEMPERATURE',
+                                'MARINE_SFC_PRESSURE',
+                                'LAND_SFC_PRESSURE',
+                                'LAND_SFC_ALTIMETER',
+                                'LAND_SFC_DEWPOINT',
+                                'LAND_SFC_TEMPERATURE',
+                                'LAND_SFC_SPECIFIC_HUMIDITY',
+                                'LAND_SFC_RELATIVE_HUMIDITY',
+                                'LAND_SFC_U_WIND_COMPONENT',
+                                'LAND_SFC_V_WIND_COMPONENT',
+                                'RADAR_REFLECTIVITY',
+                                'RADAR_CLEARAIR_REFLECTIVITY',
+                                'DOPPLER_RADIAL_VELOCITY',
+                                'GOES_LWP_PATH',
+                                'GOES_IWP_PATH',
+                                'GOES_CWP_ZERO',
+                                'GOES_16_ABI_TB',
 
    evaluate_these_obs_types = ''
   /
@@ -165,7 +187,7 @@
 &model_nml
    init_template_filename       = 'init.nc'
    assimilation_period_days     = 0
-   assimilation_period_seconds  = 21600
+   assimilation_period_seconds  = 900
    model_perturbation_amplitude = 0.0001
    vert_localization_coord      = 3
    calendar                     = 'Gregorian'
@@ -202,10 +224,40 @@
                           'rho',                   'QTY_DENSITY',
                           'uReconstructZonal',     'QTY_U_WIND_COMPONENT',
                           'uReconstructMeridional','QTY_V_WIND_COMPONENT',
+                          'u',                     'QTY_EDGE_NORMAL_SPEED',
                           'w',                     'QTY_VERTICAL_VELOCITY',
                           'qv',                    'QTY_VAPOR_MIXING_RATIO',
                           'surface_pressure',      'QTY_SURFACE_PRESSURE',
+                          'qc',                    'QTY_CLOUDWATER_MIXING_RATIO',
+                          'qr',                    'QTY_RAINWATER_MIXING_RATIO',
+                          'qi',                    'QTY_ICE_MIXING_RATIO',
+                          'qs',                    'QTY_SNOW_MIXING_RATIO',
+                          'qg',                    'QTY_GRAUPEL_MIXING_RATIO',
+                          'qh',                    'QTY_HAIL_MIXING_RATIO',
+                          'volg',                  'QTY_GRAUPEL_VOLUME',
+                          'volh',                  'QTY_HAIL_VOLUME',
+                          'nc',                    'QTY_DROPLET_NUMBER_CONCENTR',
+                          'nr',                    'QTY_RAIN_NUMBER_CONCENTR',
+                          'ni',                    'QTY_ICE_NUMBER_CONCENTRATION',
+                          'ns',                    'QTY_SNOW_NUMBER_CONCENTR',
+                          'ng',                    'QTY_GRAUPEL_NUMBER_CONCENTR',
+                          'nh',                    'QTY_HAIL_NUMBER_CONCENTR',
+                          'refl10cm',              'QTY_RADAR_REFLECTIVITY',
    mpas_state_bounds    = 'qv','0.0','NULL','CLAMP',
+                          'qc','0.0','NULL','CLAMP',
+                          'qr','0.0','NULL','CLAMP',
+                          'qi','0.0','NULL','CLAMP',
+                          'qs','0.0','NULL','CLAMP',
+                          'qg','0.0','NULL','CLAMP',
+                          'qh','0.0','NULL','CLAMP',
+                          'volg','0.0','NULL','CLAMP',
+                          'volh','0.0','NULL','CLAMP',
+                          'nc','0.0','NULL','CLAMP',
+                          'nr','0.0','NULL','CLAMP',
+                          'ni','0.0','NULL','CLAMP',
+                          'ns','0.0','NULL','CLAMP',
+                          'ng','0.0','NULL','CLAMP',
+                          'ng','0.0','NULL','CLAMP',
   /
 
 &update_mpas_states_nml
@@ -241,12 +293,14 @@
                              '../../../observations/forward_operators/obs_def_gts_mod.f90',
                              '../../../observations/forward_operators/obs_def_metar_mod.f90',
                              '../../../observations/forward_operators/obs_def_gps_mod.f90',
-                             '../../../observations/forward_operators/obs_def_vortex_mod.f90', 
-                             '../../../observations/forward_operators/obs_def_rel_humidity_mod.f90', 
+                             '../../../observations/forward_operators/obs_def_vortex_mod.f90',
+                             '../../../observations/forward_operators/obs_def_rel_humidity_mod.f90',
                              '../../../observations/forward_operators/obs_def_dew_point_mod.f90',
                              '../../../observations/forward_operators/obs_def_radar_mod.f90',
-                             '../../../observations/forward_operators/obs_def_cwp_mod.f90'
+                             '../../../observations/forward_operators/obs_def_cwp_mod.f90',
+                             '../../../observations/forward_operators/obs_def_rttov13_mod.f90'
    quantity_files          = '../../../assimilation_code/modules/observations/atmosphere_quantities_mod.f90'
+                             '../../../assimilation_code/modules/observations/default_quantities_mod.f90',
   /
 
 &obs_sequence_tool_nml
@@ -399,6 +453,78 @@
    pointcount            = 100000
   /
 
+&obs_def_rttov_nml
+   rttov_sensor_db_file   = 'rttov_sensor_db.csv'
+   first_lvl_is_sfc       = .true.
+   mw_clear_sky_only      = .false.
+   interp_mode            = 1
+   do_checkinput          = .true.
+   apply_reg_limits       = .true.
+   verbose                = .true.
+   fix_hgpl               = .false.
+   do_lambertian          = .false.
+   lambertian_fixed_angle = .true.
+   rad_down_lin_tau       = .true.
+   use_q2m                = .true.
+   use_uv10m              = .true.
+   use_wfetch             = .false.
+   use_water_type         = .false.
+   addrefrac              = .false.
+   plane_parallel         = .false.
+   use_salinity           = .false.
+   cfrac_data             = .true.
+   clw_data               = .true.
+   rain_data              = .true.
+   ciw_data               = .true.
+   snow_data              = .true.
+   graupel_data           = .true.
+   hail_data              = .false.
+   w_data                 = .true.
+   clw_scheme             = 1
+   clw_cloud_top          = 322.
+   fastem_version         = 6
+   supply_foam_fraction   = .false.
+   use_totalice           = .true.
+   use_zeeman             = .false.
+   cc_threshold           = 0.05
+   ozone_data             = .false.
+   co2_data               = .false.
+   n2o_data               = .false.
+   co_data                = .false.
+   ch4_data               = .false.
+   so2_data               = .false.
+   addsolar               = .false.
+   rayleigh_single_scatt  = .true.
+   do_nlte_correction     = .false.
+   solar_sea_brdf_model   = 2
+   ir_sea_emis_model      = 2
+   use_sfc_snow_frac      = .false.
+   add_aerosl             = .false.
+   aerosl_type            = 1
+   add_clouds             = .true.
+   ice_scheme             = 1
+   use_icede              = .false.
+   idg_scheme             = 2
+   user_aer_opt_param     = .false.
+   user_cld_opt_param     = .false.
+   grid_box_avg_cloud     = .true.
+   cldcol_threshold       = -1.0
+   cloud_overlap          = 1
+   cc_low_cloud_top       = 750.0
+   ir_scatt_model         = 2
+   vis_scatt_model        = 1
+   dom_nstreams           = 8
+   dom_accuracy           = 0.0
+   dom_opdep_threshold    = 0.0
+   addpc                  = .false.
+   npcscores              = -1
+   addradrec              = .false.
+   ipcreg                 = 1
+   use_htfrtc             = .false.
+   htfrtc_n_pc            = -1
+   htfrtc_simple_cloud    = .false.
+   htfrtc_overcast        = .false.
+ /
 &obs_seq_coverage_nml
    obs_sequences     = ''
    obs_sequence_list = 'obs_coverage_list.txt'

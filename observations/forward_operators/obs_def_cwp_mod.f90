@@ -14,7 +14,10 @@
 ! GOES_LWP_PATH,      QTY_CWP_PATH
 ! GOES_IWP_PATH,      QTY_CWP_PATH
 ! GOES_CWP_ZERO,      QTY_CWP_PATH_ZERO
-! GOES_CWP_NIGHT,     QTY_CWP_PATH
+! GOES_LWP_NIGHT,     QTY_CWP_PATH
+! GOES_IWP_NIGHT,     QTY_CWP_PATH
+! GOES_LWP0_PATH,     QTY_CWP_PATH_ZERO
+! GOES_CWP_ZERO_NIGHT,     QTY_CWP_PATH
 ! END DART PREPROCESS KIND LIST
 
 ! BEGIN DART PREPROCESS USE OF SPECIAL OBS_DEF MODULE
@@ -30,8 +33,14 @@
 !            call get_expected_cwp(state_handle, ens_size, location, "GOES_IWP_PATH", obs_def%key, expected_obs, istatus)
 !         case(GOES_CWP_ZERO)
 !            call get_expected_cwp(state_handle, ens_size, location, "GOES_CWP_ZERO", obs_def%key, expected_obs, istatus)
-!         case(GOES_CWP_NIGHT)
-!            call get_expected_cwp(state_handle, ens_size, location, "GOES_CWP_NIGHT", obs_def%key, expected_obs, istatus)
+!         case(GOES_LWP_NIGHT)
+!            call get_expected_cwp(state_handle, ens_size, location, "GOES_LWP_NIGHT", obs_def%key, expected_obs, istatus)
+!         case(GOES_IWP_NIGHT)
+!            call get_expected_cwp(state_handle, ens_size, location, "GOES_IWP_NIGHT", obs_def%key, expected_obs, istatus)
+!         case(GOES_LWP0_PATH)
+!            call get_expected_cwp(state_handle, ens_size, location, "GOES_LWP0_PATH", obs_def%key, expected_obs, istatus)
+!         case(GOES_CWP_ZERO_NIGHT)
+!            call get_expected_cwp(state_handle, ens_size, location, "GOES_CWP_ZERO_NIGHT", obs_def%key, expected_obs, istatus)
 ! END DART PREPROCESS GET_EXPECTED_OBS_FROM_DEF
 
 ! BEGIN DART PREPROCESS WRITE_OBS_DEF
@@ -43,7 +52,13 @@
 !            call write_cwp(obs_def%key, ifile, fform)
 !         case(GOES_CWP_ZERO)
 !            call write_cwp(obs_def%key, ifile, fform)
-!         case(GOES_CWP_NIGHT)
+!         case(GOES_LWP_NIGHT)
+!            call write_cwp(obs_def%key, ifile, fform)
+!         case(GOES_IWP_NIGHT)
+!            call write_cwp(obs_def%key, ifile, fform)
+!         case(GOES_LWP0_PATH)
+!            call write_cwp(obs_def%key, ifile, fform)
+!         case(GOES_CWP_ZERO_NIGHT)
 !            call write_cwp(obs_def%key, ifile, fform)
 ! END DART PREPROCESS WRITE_OBS_DEF
 
@@ -56,7 +71,13 @@
 !            call read_cwp(obs_def%key, ifile, fform)
 !         case(GOES_CWP_ZERO)
 !            call read_cwp(obs_def%key, ifile, fform)
-!         case(GOES_CWP_NIGHT)
+!         case(GOES_LWP_NIGHT)
+!            call read_cwp(obs_def%key, ifile, fform)
+!         case(GOES_IWP_NIGHT)
+!            call read_cwp(obs_def%key, ifile, fform)
+!         case(GOES_LWP0_PATH)
+!            call read_cwp(obs_def%key, ifile, fform)
+!         case(GOES_CWP_ZERO_NIGHT)
 !            call read_cwp(obs_def%key, ifile, fform)
 ! END DART PREPROCESS READ_OBS_DEF
 
@@ -69,7 +90,13 @@
 !            call interactive_cwp(obs_def%key)
 !         case(GOES_CWP_ZERO)
 !            call interactive_cwp(obs_def%key)
-!         case(GOES_CWP_NIGHT)
+!         case(GOES_LWP_NIGHT)
+!            call interactive_cwp(obs_def%key)
+!         case(GOES_IWP_NIGHT)
+!            call interactive_cwp(obs_def%key)
+!         case(GOES_LWP0_PATH)
+!            call interactive_cwp(obs_def%key)
+!         case(GOES_CWP_ZERO_NIGHT)
 !            call interactive_cwp(obs_def%key)
 ! END DART PREPROCESS INTERACTIVE_OBS_DEF
 
@@ -99,7 +126,8 @@ use     obs_kind_mod, only : QTY_PRESSURE, QTY_SURFACE_PRESSURE, &
                              QTY_GRAUPEL_MIXING_RATIO, QTY_RAINWATER_MIXING_RATIO, QTY_SNOW_MIXING_RATIO, &
                              QTY_HAIL_MIXING_RATIO, QTY_CWP_PATH, QTY_CWP_PATH_ZERO, &
                              QTY_TEMPERATURE, QTY_VAPOR_MIXING_RATIO, &
-                             GOES_CWP_PATH, GOES_LWP_PATH, GOES_IWP_PATH, GOES_CWP_ZERO
+                             GOES_CWP_PATH, GOES_LWP_PATH, GOES_IWP_PATH, GOES_CWP_ZERO, &
+                             GOES_LWP_NIGHT, GOES_IWP_NIGHT,GOES_LWP0_PATH, GOES_CWP_ZERO_NIGHT
 use  ensemble_manager_mod, only : ensemble_type
 use obs_def_utilities_mod, only : track_status
 
@@ -133,7 +161,7 @@ logical  :: model_levels = .true.        ! if true, use model levels, ignores nu
 real(r8) :: pressure_top = 20000.0       ! top pressure in pascals
 logical  :: separate_surface_level = .true.  ! false: level 1 of 3d grid is sfc
                                              ! true: sfc is separate from 3d grid (WRF)
-integer  :: num_plevels = 40  ! number of intervals if model_levels is F
+integer  :: num_plevels = 60  ! number of intervals if model_levels is F
 
 ! Storage for the satellite cloud height information required for observations of this type
 integer :: num_cwp_obs = 0
@@ -334,6 +362,8 @@ end subroutine set_cbp_ctp
 !                Version 1.4: Aug 2  2017	Updated for DART-MAN version (TJ / KK).
 !                Version 2.0: 2022              Updated with latest updates from GSI forward operator / obs processing code
 !                Version 2.1: June 15 2023      Updated with GOES_CWP_NIGHT variable for future use
+!                Version 2.2: Nov 20 2023       Added other night time CWP variable information / check for below freezing for LWP
+!   
 !
 !  Based off of TPW forward operator developed by Hui Liu at NCAR                               
 !------------------------------------------------------------------------------
@@ -368,12 +398,10 @@ call check_valid_key(icwpkey, 'GIVEN', 'get_expected_cwp')
 out_wp(:) = missing_r8   
 istatus(:) = 0
 
-!print*, 'PHYSICS OPTION: ', physics
-
 obsloc   = get_location(location)
 lon      = obsloc(1)                   ! degree: 0 to 360
 lat      = obsloc(2)                   ! degree: -90 to 90
-height   = obsloc(3)                   ! (cloud height)
+height   = obsloc(3)                   ! cloud median height in pressure (Pa)
 
 
 lon2 = lon
@@ -648,8 +676,7 @@ if (maxk > mink) then
 	
 	!if (any(press(i, k) < press(i, k+1)) ) print*, press(i, k), press(i, k+1), lon, lat
 	
-	if (press(i, k) > 10000.0 .and. press(i, k+1) > 10000.0 .and. press(i,k) > press(i, k+1) .and. press(i, k) < 110000.0 )  then
-	
+	if (press(i, k) > 10000.0 .and. press(i, k+1) > 10000.0 .and. press(i,k) > press(i, k+1) .and. press(i, k) < 110000.0 )  then	
 	
 		cwp(i) = cwp(i) + 0.5_r8 * ( (qc(i, k) + qc(i, k+1)) + (qi(i, k) + qi(i, k+1)) + (qg(i, k) + qg(i, k+1)) + &
                       (qr(i, k) + qr(i, k+1)) + (qs(i, k) + qs(i, k+1)) + (qha(i, k) + qha(i, k+1)) ) * (press(i, k) - press(i, k+1))
@@ -672,7 +699,16 @@ if (maxk > mink) then
   layer_rh = sum(rh(i, mink:maxk)) / (max(1,size(rh(i, mink:maxk))))
   layer_tk = sum(tmpk(i, mink:maxk)) / (max(1,size(tmpk(i, mink:maxk))))
 
-  if ( trim(varname) == "GOES_LWP_PATH" .and. layer_rh .gt. 0.95 ) lwp(i) = -998.0
+  ! IF environment is nearly staturated, do not assimilated LWP
+  if ( trim(varname) == "GOES_LWP_PATH" .and. layer_rh .gt. 0.975 ) lwp(i) = -998.0
+  if ( trim(varname) == "GOES_LWP_NIGHT" .and. layer_rh .gt. 0.975 ) lwp(i) = -998.0
+
+  ! CHECK IF Layer temperature is below freezing for LWP retreivals...
+  if ( trim(varname) == "GOES_LWP_PATH" .and. layer_tk .lt. 273.0 ) then
+  !   print*, 'LWP - FREEZING CHECK: ', layer_tk, lwp(i)
+     lwp(i) = cwp(i)
+  endif
+  if ( trim(varname) == "GOES_LWP_NIGHT" .and. layer_tk .lt. 273.0 ) lwp(i) = cwp(i)
 
 endif
 
@@ -689,16 +725,22 @@ where (lwp > 0.0 ) lwp = 1.0 * lwp /(gravity)   ! -> kg/m2
 where (iwp > 0.0 ) iwp = 1.0 * iwp /(gravity)   ! -> kg/m2
 
 !SET MAX MODEL CWP VALUE TO 5 kg/m2 to correspond with satellite saturation value
-where (cwp > 4.5 ) cwp = 4.5
-where (iwp > 4.5 ) iwp = 4.5
+where (cwp > 5.0 ) cwp = 5.0
+where (iwp > 5.0 ) iwp = 5.0
 where (lwp > 3.0 ) lwp = 3.0
 
 !********************* ASSIGN CORRECT PATH (ALL/ICE/WATER) TO OUTPUT VARIABLE
-!out_wp = 0.0_r8
+!out_wp(:) = cwp
 if ( trim(varname) == "GOES_CWP_PATH" ) out_wp = cwp
 if ( trim(varname) == "GOES_CWP_ZERO" ) out_wp = cwp
 if ( trim(varname) == "GOES_IWP_PATH" ) out_wp = cwp   !iwp	
 if ( trim(varname) == "GOES_LWP_PATH" ) out_wp = lwp
+if ( trim(varname) == "GOES_LWP0_PATH" ) out_wp = iwp
+
+!NIGHT TIME DATA
+if ( trim(varname) == "GOES_LWP_NIGHT" ) out_wp = lwp
+if ( trim(varname) == "GOES_IWP_NIGHT" ) out_wp = cwp
+if ( trim(varname) == "GOES_CWP_ZERO_NIGHT" ) out_wp = cwp
 
 !if (cwp < 0.0 .or. cwp > 100.0) then
 !print '(A18, 2F10.3, 4F12.6,4F10.3, 2I6)', trim(varname), lon, lat, cwp,iwp,lwp,out_wp,  satcbp/100.0, satctp/100.0, press(mink)/100.0, press(maxk)/100.0

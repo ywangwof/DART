@@ -14,7 +14,7 @@ program update_bc
 !         The update_bc_nml namelist defines the input and output file
 !         name lists for all ensemble members.
 !         The input list should be matched with output_state_file_list in &filter_nml.
-!         
+!
 ! author: Soyoung Ha 23 Aug 16
 !         Updated in  4 May 2017 for the Manhatten release
 !         Updated in 28 Jul 2020 for checking dimension sizes in analysis and lbc files.
@@ -83,7 +83,7 @@ integer :: nVertLevelsB = -1  ! Total number of levels in ncBdyID
 
 call initialize_utilities(progname='update_bc')
 
-! Read the namelist to get the input filename. 
+! Read the namelist to get the input filename.
 
 call find_namelist_in_file("input.nml", "update_bc_nml", iunit)
 read(iunit, nml = update_bc_nml, iostat = io)
@@ -116,7 +116,7 @@ write(*,*)
 write(*,*) 'update_bc: Updating ',nbdyvars,' variables'
 
 !----------------------------------------------------------------------
-! Reads lists of input mpas (prior) and filter (analysis) files 
+! Reads lists of input mpas (prior) and filter (analysis) files
 !----------------------------------------------------------------------
 filenum = 1
 fileloop: do        ! until out of files
@@ -127,7 +127,7 @@ fileloop: do        ! until out of files
   if (next_infile == '' .or. next_outfile == '') exit fileloop
 
   !----------------------------------------------------------------------
-  ! Reads input lbc (prior) and filter (analysis) files 
+  ! Reads input lbc (prior) and filter (analysis) files
   !----------------------------------------------------------------------
 
   ncAnlID = nc_open_file_readonly(next_infile,  'update_bc - open readonly')
@@ -142,10 +142,11 @@ fileloop: do        ! until out of files
   call print_time(model_time,'mpas current time')
 
   if ( model_time /= state_time ) then
-   call print_time(state_time,'DART current time',logfileunit)
-   call print_time(model_time,'mpas current time',logfileunit)
-   write(string1,*) trim(next_infile),' current time must equal model time'
-   call error_handler(E_ERR,'update_bc',string1,source,revision,revdate)
+   call print_time(state_time,'DART analysis current time',logfileunit)
+   call print_time(model_time,'mpas lbc      current time',logfileunit)
+   model_time = state_time     ! NSSL since we do not have lbc file in no-zero minutes past hour
+   !write(string1,*) trim(next_infile),' current time must equal model time'
+   !call error_handler(E_ERR,'update_bc',string1,source,revision,revdate)
   endif
 
   !----------------------------------------------------------------------

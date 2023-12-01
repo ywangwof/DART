@@ -158,9 +158,13 @@
 ! GOES_15_IMAGER_RADIANCE,      QTY_RADIANCE
 ! GOES_15_SOUNDER_RADIANCE,     QTY_RADIANCE
 ! GOES_16_ABI_RADIANCE,         QTY_RADIANCE
+! GOES_16_ABI_TB,               QTY_BRIGHTNESS_TEMPERATURE
 ! GOES_17_ABI_RADIANCE,         QTY_RADIANCE
+! GOES_17_ABI_TB,               QTY_BRIGHTNESS_TEMPERATURE
 ! GOES_18_ABI_RADIANCE,         QTY_RADIANCE
+! GOES_18_ABI_TB,               QTY_BRIGHTNESS_TEMPERATURE
 ! GOES_19_ABI_RADIANCE,         QTY_RADIANCE
+! GOES_19_ABI_TB,               QTY_BRIGHTNESS_TEMPERATURE
 ! GMS_1_IMAGER_RADIANCE,        QTY_RADIANCE
 ! GMS_2_IMAGER_RADIANCE,        QTY_RADIANCE
 ! GMS_3_IMAGER_RADIANCE,        QTY_RADIANCE
@@ -3729,8 +3733,8 @@ GETLEVELDATA : do i = 1,numlevels
    if (clw_scheme == 2) then
       ! The effective diameter must also be specified with clw_scheme 2
       ! call interpolate(state_handle, ens_size, loc, QTY_CLOUDWATER_DE, clouds%clwde(:, i), this_istatus)
-      !clouds%clwde(:, i) = 2*1e6*clouds%clwde(:, i)  ! convert from WRF variable radius in m to DART diameter in micrometer
-      call check_status('QTY_CLOUDWATER_DE', ens_size, this_istatus, val, loc, istatus, routine, source, revision, revdate, .false., return_now)
+      clouds%clwde(:, i) = 2*1e6*clouds%clwde(:, i)  ! convert from WRF variable radius in m to DART diameter in micrometer
+      !call check_status('QTY_CLOUDWATER_DE', ens_size, this_istatus, val, loc, istatus, routine, source, revision, revdate, .false., return_now)
       if (return_now) return
    end if
 
@@ -3757,8 +3761,8 @@ GETLEVELDATA : do i = 1,numlevels
       if (ice_scheme == 1 .and. use_icede) then
          ! if use_icede with ice_scheme 1, must also specify ice effective diameter
          !call interpolate(state_handle, ens_size, loc, QTY_CLOUD_ICE_DE, clouds%icede(:, i), this_istatus)
-         !clouds%icede(:, i) = 2*1e6*clouds%icede(:, i)  ! convert from WRF variable radius in m to DART diameter in micrometer
-         call check_status('QTY_CLOUD_ICE_DE', ens_size, this_istatus, val, loc, istatus, routine, source, revision, revdate, .false., return_now)
+         clouds%icede(:, i) = 2*1e6*clouds%icede(:, i)  ! convert from WRF variable radius in m to DART diameter in micrometer
+         !call check_status('QTY_CLOUD_ICE_DE', ens_size, this_istatus, val, loc, istatus, routine, source, revision, revdate, .false., return_now)
          if (return_now) return
       end if
    end if
