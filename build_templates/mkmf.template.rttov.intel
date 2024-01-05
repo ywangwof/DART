@@ -125,11 +125,11 @@ LD = ifort
 #
 # NETCDF = /opt/local
 # HDFEOS5 = $(NETCDF)
-# RTTOV = ~/research/satellite/rttov
+ RTTOV = /glade/work/ywang/tools/rttov13_2
 
-RTTOV_VERSION = 12
+RTTOV_VERSION = 13
 
-HDFEOS5 = /glade/u/apps/ch/opt/hdf-eos5/5.1.16/intel/19.0.5
+HDFEOS5 = $(NCAR_ROOT_HDF5)
 
 # You will likely not need to modify below this line
 
@@ -140,7 +140,7 @@ RTLIBS = -lrttov$(RTTOV_VERSION)_wrapper    -lrttov$(RTTOV_VERSION)_mw_scatt -lr
 INCS = -I$(NETCDF)/include -I$(HDFEOS5)/include -I$(RTTOV)/include -I$(RTTOV)/mod
 
 LIBS = -L$(NETCDF)/lib -lnetcdff -lnetcdf \
-       -L$(HDFEOS5)/lib -lhdf5hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 \
+       -L$(HDFEOS5)/lib -lhdf5_hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 \
        -L$(RTTOV)/lib  $(RTLIBS) 
 
 FFLAGS  = -O2 -assume buffered_io $(INCS)
