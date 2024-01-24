@@ -13,11 +13,11 @@ module model_mod
 ! that is useful to other pieces of code.
 
 ! This revision of the model_mod supports both a global MPAS grid and
-! a regional grid.  For the regional grid only observations which 
+! a regional grid.  For the regional grid only observations which
 ! are completely inside the interior will be assimilated, meaning obs
-! which need interpolation information from the boundary cells 
+! which need interpolation information from the boundary cells
 ! (in any of the 7 boundary layers) will be rejected.  However, during the
-! assimilation phase all locations in the local grid will be impacted, 
+! assimilation phase all locations in the local grid will be impacted,
 ! even locations in the boundary layers if there are obs close to the
 ! boundaries.  A post-processing step will smooth the GFS external
 ! values with the values updated by the assimilation in the boundary layers.
@@ -45,7 +45,7 @@ use     location_mod, only : location_type, get_dist, query_location,          &
                              loc_get_close_obs => get_close_obs,               &
                              loc_get_close_state => get_close_state,           &
                              is_vertical, set_vertical_localization_coord
-                             
+
 use netcdf_utilities_mod, only : nc_add_global_attribute, nc_synchronize_file, &
                                  nc_add_global_creation_time, nc_check, &
                                  nc_begin_define_mode, nc_end_define_mode,                       &
@@ -257,7 +257,7 @@ integer            :: xyzdebug = 0
 integer            :: debug = 0   ! turn up for more and more debug messages
 
 ! this is not in the namelist or supported generally.
-! (setting this to true avoids the surface elevation max diff 
+! (setting this to true avoids the surface elevation max diff
 ! test for elevation and surface pressure.)
 logical :: always_assim_surf_altimeters = .false.
 
@@ -299,30 +299,30 @@ logical  :: extrapolate = .false.
 ! to optionally add grid info or any other non-state variables or attributes.
 ! setting this to .true. adds the mpas grid info to the file.  .false. does
 ! not and results in smaller diag/output files.
-logical :: write_grid_to_diag_files = .false. 
+logical :: write_grid_to_diag_files = .false.
 
 ! in converting to scale height for the vertical, set this to .false. to
 ! use simply the log of the pressure.  to normalize by the surface pressure
 ! (backwards compatible with previous code), set this to .true.
-logical :: no_normalization_of_scale_heights = .true. 
+logical :: no_normalization_of_scale_heights = .true.
 
 ! for regional MPAS
 real(r8) :: dxmax  ! max distance between two adjacent cell centers in the mesh (in meters)
 
 ! when updating boundary files for regional mpas, note whether the boundary
 ! file has the reconstructed winds (lbc_ur, lbc_vr) or not. (this is set by
-! looking at the bdy template file and seeing if those variables are there.)  
-! if not, the other two options are ignored.  
-! if they are in the lbc file, then the other logicals control whether to use 
-! them instead of updating the U edge winds directly, and whether to use the 
-! reconstructed increments or not. 
+! looking at the bdy template file and seeing if those variables are there.)
+! if not, the other two options are ignored.
+! if they are in the lbc file, then the other logicals control whether to use
+! them instead of updating the U edge winds directly, and whether to use the
+! reconstructed increments or not.
 ! the latter two options could be added to the namelist if someone wanted to
 ! explore the options for how the edge winds are updated in the boundary file.
 ! for now they're not - they're hardcoded true.
 ! note that these are for the boundary file update only - there are separate
 ! options for how to update the U winds in the main assimilation state.
 
-logical :: lbc_file_has_reconstructed_winds     = .false.  
+logical :: lbc_file_has_reconstructed_winds     = .false.
 
 
 namelist /model_nml/             &
@@ -364,8 +364,8 @@ integer :: nfields
 
 !>@todo FIXME - REMOVE AS MUCH OF THIS AS POSSIBLE.
 !> some of this information is in the state structure now.
-!> the duplicate progvar stuff should be removed and the 
-!> state routines used instead.  this duplicates work and 
+!> the duplicate progvar stuff should be removed and the
+!> state routines used instead.  this duplicates work and
 !> makes us keep up code in 2 different places.
 
 ! original code:
@@ -428,7 +428,7 @@ real(r8), allocatable :: latEdge(:) ! edge longitudes (degrees, original radians
 real(r8), allocatable :: lonCell(:) ! cell center longitudes (degrees, original radians in file)
 real(r8), allocatable :: latCell(:) ! cell center latitudes  (degrees, original radians in file)
 real(r8), allocatable :: dcEdge(:)  ! distance between two adjacent cell centers (in meters)
-real(r8), allocatable :: xland(:)   ! land-ocean mask (1=land including sea-ice ; 2=ocean)  
+real(r8), allocatable :: xland(:)   ! land-ocean mask (1=land including sea-ice ; 2=ocean)
 real(r8), allocatable :: seaice(:)  ! sea-ice flag (0=no seaice; =1 otherwise) - for rttov
 real(r8), allocatable :: skintemp(:)! ground or water surface temperature      - for rttov
 real(r8), allocatable :: zGridFull(:,:)   ! geometric height at cell centers at full levels (nVertLevelsP1,nCells) = zgrid
@@ -1169,12 +1169,12 @@ call write_location(0,location,charstring=locstring)
 
 llv = get_location(location)
 verttype = nint(query_location(location))
-surface_obs = (verttype == VERTISSURFACE) 
+surface_obs = (verttype == VERTISSURFACE)
 
 ! this routine returns the cellid for a global mpas grid, same as
 ! find_closest_cell_center().
 ! for a regional grid it only returns a good cellid if the closest cell center
-! AND the other 2 triangle points surrounding this location are completely inside 
+! AND the other 2 triangle points surrounding this location are completely inside
 ! the grid and none of the vertices are in the boundary region.
 cellid = cell_ok_to_interpolate(location)
 if (cellid < 1) then
@@ -1218,10 +1218,10 @@ endif
 ! also there are options for the winds because mpas has both
 ! winds on the cell edges (normal only) and reconstructed winds
 ! at the cell centers (U,V).  there are namelist options to control
-! which to use if both are in the state vector.  
-! As another note, mpas defines the model variable qv as water vapor 
+! which to use if both are in the state vector.
+! As another note, mpas defines the model variable qv as water vapor
 ! mixing ratio while it defines q2 as 2-meter specific humidity,
-! not 2-m water vapor mixing ratio, so q2 should be specified as 
+! not 2-m water vapor mixing ratio, so q2 should be specified as
 ! QTY_2M_SPECIFIC_HUMIDITY in mpas_state_variables in &mpas_vars_nml.
 
 ! is this field in the state?
@@ -1241,7 +1241,7 @@ else
          goodkind = .true.
       case (QTY_PRESSURE)   ! surface pressure should be in the state
          goodkind = .true.
-      case (QTY_SKIN_TEMPERATURE, QTY_SURFACE_TYPE, QTY_CLOUD_FRACTION)   
+      case (QTY_SKIN_TEMPERATURE, QTY_SURFACE_TYPE, QTY_CLOUD_FRACTION)
          goodkind = .true.
       case (QTY_SPECIFIC_HUMIDITY, QTY_2M_SPECIFIC_HUMIDITY)
          goodkind = .true.
@@ -1320,7 +1320,7 @@ else if (obs_kind == QTY_TEMPERATURE) then
    if (all(istatus /= 0)) goto 100
 
    ! convert pot_temp, density, vapor mixing ratio into sensible temperature
-   expected_obs(:) = theta_to_tk(ens_size, values(1, :), values(2, :), values(3, :), istatus) 
+   expected_obs(:) = theta_to_tk(ens_size, values(1, :), values(2, :), values(3, :), istatus)
 
    if (debug > 9 .and. do_output()) &
       print *, 'model_interpolate: TEMPERATURE ', istatus(1), expected_obs(1), trim(locstring)
@@ -1376,9 +1376,9 @@ else if (obs_kind == QTY_SPECIFIC_HUMIDITY) then
          if (expected_obs(e) >= 0.0_r8) then
             expected_obs(e) = expected_obs(e) / (1.0_r8 + expected_obs(e))
          else
-            expected_obs(e) = 1.0e-12_r8  
+            expected_obs(e) = 1.0e-12_r8
          endif
-      endif 
+      endif
    enddo
    if ( all(istatus /= 0 ) ) goto 100
 
@@ -1435,7 +1435,7 @@ endif
 100 continue
 
 ! this is for debugging - when we're confident the code is returning
-! consistent values and rc codes, both these tests can be removed for speed. 
+! consistent values and rc codes, both these tests can be removed for speed.
 ! also optionally check for generated NaNs for now.
 
 do e = 1, ens_size
@@ -1452,7 +1452,7 @@ do e = 1, ens_size
          write(string1,*) 'interp routine returned a negative status which is an illegal value'
       else if (istatus(e) /= 0 .and. expected_obs(e) /= MISSING_R8) then
          write(string1,*) 'interp routine returned a bad status but not a MISSING_R8 value'
-         expected_obs(e) = MISSING_R8  
+         expected_obs(e) = MISSING_R8
       else
          write(string1,*) 'interp routine returned a good status but set value to MISSING_R8'
       endif
@@ -1531,7 +1531,7 @@ endif
 !----------------------------------------------------------------------------
 
 !----------------------------------------------------------------------------
-! Dimensions 
+! Dimensions
 !----------------------------------------------------------------------------
 
 call nc_define_dimension(ncid, 'nCells',        nCells,        routine)
@@ -1695,7 +1695,7 @@ integer :: get_num_vars
 
 if ( .not. module_initialized ) call static_init_model
 
-get_num_vars = nfields   
+get_num_vars = nfields
 
 end function get_num_vars
 
@@ -1770,8 +1770,8 @@ integer(i8), allocatable :: var_list(:)
 ! Perturbs a model state copies for generating initial ensembles.
 ! A model may choose to provide a NULL INTERFACE by returning
 ! .false. for the interf_provided argument. This indicates to
-! the filter that if it needs to generate perturbed states, 
-! it may do so by adding a perturbation to each model state 
+! the filter that if it needs to generate perturbed states,
+! it may do so by adding a perturbation to each model state
 ! variable independently. The interf_provided argument
 ! should be returned as .true. if the model wants to do its own
 ! perturbing of states.
@@ -1841,8 +1841,8 @@ end subroutine pert_model_copies
 
 !------------------------------------------------------------------
 ! Given a DART location (referred to as "base") and a set of candidate
-! locations & qtys/types (locs, loc_qtys/types), returns the subset close 
-! to the "base", their indices, and their distances to the "base" 
+! locations & qtys/types (locs, loc_qtys/types), returns the subset close
+! to the "base", their indices, and their distances to the "base"
 
 subroutine get_close_obs(gc, base_loc, base_type, locs, loc_qtys, loc_types, &
                          num_close, close_ind, dist, state_handle)
@@ -1948,8 +1948,8 @@ end subroutine get_close_obs
 
 !------------------------------------------------------------------
 ! Given a DART location (referred to as "base") and a set of candidate
-! locations & qtys/indices (locs, loc_qtys/loc_indx), returns the subset close 
-! to the "base", their indices, and their distances to the "base" 
+! locations & qtys/indices (locs, loc_qtys/loc_indx), returns the subset close
+! to the "base", their indices, and their distances to the "base"
 
 subroutine get_close_state(gc, base_loc, base_type, locs, loc_qtys, loc_indx, &
                            num_close, close_ind, dist, state_handle)
@@ -2110,11 +2110,19 @@ lbc_variables(4) = 'lbc_rho'
 lbc_variables(5) = 'lbc_theta'
 lbc_variables(6) = 'lbc_u'
 lbc_variables(7) = 'lbc_w'
+lbc_variables(8) = 'lbc_qi'  ! CSS added elements 8-15 
+lbc_variables(9) = 'lbc_qs'
+lbc_variables(10) = 'lbc_qg'
+lbc_variables(11) = 'lbc_nr'
+lbc_variables(12) = 'lbc_ni'
+lbc_variables(13) = 'lbc_nc'
+lbc_variables(14) = 'lbc_ns'
+lbc_variables(15) = 'lbc_ng'
 
 ncid = nc_open_file_readonly(template_filename, 'set_lbc_variables')
 if (nc_variable_exists(ncid, 'lbc_ur')) then
-   lbc_variables(8) = 'lbc_ur'  
-   lbc_variables(9) = 'lbc_vr' 
+   lbc_variables(8) = 'lbc_ur'
+   lbc_variables(9) = 'lbc_vr'
    lbc_file_has_reconstructed_winds = .true.
 endif
 call nc_close_file(ncid)
@@ -2136,7 +2144,7 @@ end subroutine force_u_into_state
 
 !-------------------------------------------------------------------
 
-!>@todo FIXME: 
+!>@todo FIXME:
 !>  i believe no one is calling this routine anymore.  we should remove
 !>  it from the public list and see what breaks.  if nothing, remove it.
 !>
@@ -2292,12 +2300,12 @@ end subroutine analysis_file_to_statevector
 !> by update_mpas_states, which does a simple ncks copy from the
 !> output of filter (netcdf with only the state vector fields in it)
 !> to a full mpas restart file with grid info, other fields, etc.
-!> 
+!>
 !> however it also averages the cell center winds and projects them
 !> onto the cell edges and updates 'u' - which is usually not in the
 !> model state, so it isn't in the input file, only the output file.
 !>
-!> the normal i/o routines wouldn't write it.  they would write 
+!> the normal i/o routines wouldn't write it.  they would write
 !> everything else, so read_state()/write_state() plus one additional
 !> 'fix_u' routine would seem to suffice.  TBD.
 !>
@@ -2391,7 +2399,7 @@ PROGVARLOOP : do ivar=1, nfields
    endif
 
 !> @todo FIXME the clamping can be done on the 1d array by getting
-!> the start/end index from the state vector.  you can also call nf90_put_var() 
+!> the start/end index from the state vector.  you can also call nf90_put_var()
 !> with a 1d conformable array without allocating, copying, writing, and freeing
 !> extra space.   or call write_state() which does all this for us.
 
@@ -2534,7 +2542,7 @@ CELLS: do cellid = 1, nCells
    weight = get_analysis_weight(cellid)
 
    ! do all variables associated with this cellid.
-   
+
    VARLOOP: do b_ivar = 1, nvars
 
       bvarname = get_variable_name(lbc_domid, b_ivar)
@@ -2577,7 +2585,7 @@ CELLS: do cellid = 1, nCells
       THISCOL: do col=1, dims(1)
          a_index = get_dart_vector_index(col, cellid, 1, anl_domid, a_ivar)
          b_index = get_dart_vector_index(col, cellid, 1, lbc_domid, b_ivar)
-   
+
          ! compute (1-w)*x_lbc + w*x_anl
          state_vector(a_index) = (1.0_r8 - weight) * state_vector(b_index) + &
                                            weight  * state_vector(a_index)
@@ -2603,58 +2611,58 @@ if (.not. lbc_update_from_reconstructed_winds) then
    ! for each edge in the grid, find the ones which are in the
    ! boundary region and blend their values.
    EDGES: do edgeid = 1, nEdges
-   
+
       if (.not. on_boundary_edge(edgeid)) cycle EDGES
-   
+
       ! 1.0 is interior, 0.0 is exterior boundary
       weight = get_analysis_weight(edgeid,.false.)
-   
+
       ! loop over vert_levels.
       THATCOL: do col=1, dims(1)
             a_index = get_dart_vector_index(col, edgeid, 1, anl_domid, a_ivar)
             b_index = get_dart_vector_index(col, edgeid, 1, lbc_domid, b_ivar)
-      
+
             ! compute (1-w)*x_lbc + w*x_anl
             state_vector(a_index) = (1.0_r8 - weight) * state_vector(b_index) + &
                                               weight  * state_vector(a_index)
       enddo THATCOL
-   
+
    enddo EDGES
 
 else  ! do the increment process
 
    ! We only blended cell-center fields (e.g. looping over all the variables in the CELLS loop above, but not over 'u' in nEdges).
    ! Now we compute diffs (or increments) between the blended ur (vr) and the prior lbc_ur (vr).
-   
+
    allocate(        lbc_u(nVertLevels, nEdges))
    allocate(    lbc_ucell(nVertLevels, nCells))
    allocate(    lbc_vcell(nVertLevels, nCells))
-   
+
    ! these analyses have been blended in the boundary zone already.
    ivar = get_varid_from_varname(anl_domid, 'uReconstructZonal')
    call vector_to_prog_var(state_vector, ivar, lbc_ucell)
-   
+
    ivar = get_varid_from_varname(anl_domid, 'uReconstructMeridional')
    call vector_to_prog_var(state_vector, ivar, lbc_vcell)
-   
+
    ! this is the analysis u, not blended in the boundary zone yet.
    avar_u = get_varid_from_varname(anl_domid, 'u')
    call vector_to_prog_var(state_vector, avar_u, lbc_u)
 
    if (idebug > 9 .and. do_output()) print *, 'MIN/MAX lbc_u before update:',MINVAL(lbc_u),MAXVAL(lbc_u)
-   
+
    if (lbc_update_winds_from_increments) then
-   
+
       ! project analysis increments at cell centers onto the edges.
-   
+
       allocate(inc_lbc_ucell(nVertLevels, nCells))
       allocate(inc_lbc_vcell(nVertLevels, nCells))
-   
-      inc_lbc_ucell = lbc_ucell - old_lbc_ucell 
-      inc_lbc_vcell = lbc_vcell - old_lbc_vcell 
-   
+
+      inc_lbc_ucell = lbc_ucell - old_lbc_ucell
+      inc_lbc_vcell = lbc_vcell - old_lbc_vcell
+
       call uv_cell_to_edges(inc_lbc_ucell, inc_lbc_vcell, delta_u)
-   
+
       ! Soyoung: Add the blended u increments back to lbc_u in the boundary zone.
       !          We should not change the analysis u in the interior domain, but
       !          We should also check bdyMaskCell for the two adjacent cells as
@@ -2670,7 +2678,7 @@ else  ! do the increment process
       if (.not. on_boundary_edge(edgeid) .and. &
           .not. on_boundary_cell(cellsOnEdge(1,edgeid)) .and. &
           .not. on_boundary_cell(cellsOnEdge(2,edgeid)) ) cycle IEDGE
-   
+
            lbc_u(:,edgeid) = lbc_u(:,edgeid) + delta_u(:,edgeid)
 
            if (idebug > 9 .and. .not.on_boundary_edge(edgeid)) &
@@ -2683,24 +2691,24 @@ else  ! do the increment process
       deallocate(old_lbc_ucell, old_lbc_vcell, delta_u)
 
    else
-   
+
       ! just replace, no increments
       ! project the diffs (or increments) onto the edges by calling uv_cell_to_edges.
       call uv_cell_to_edges(lbc_ucell, lbc_vcell, lbc_u, .true.)
-      
+
    endif
    if (idebug > 9 .and. do_output()) print *, 'MIN/MAX lbc_u  after update:',MINVAL(lbc_u),MAXVAL(lbc_u)
-   
+
    ! put lbc_u array data back into the state_vector
-   
+
    sb_index = get_index_start(anl_domid, avar_u)
    eb_index = get_index_end  (anl_domid, avar_u)
    state_vector(sb_index:eb_index) = reshape(lbc_u, (/eb_index-sb_index+1/) )
-      
+
    deallocate(lbc_u, lbc_ucell, lbc_vcell)
 
 endif   ! U updates
-   
+
 
 ! for each boundary variable, write it to the output file.
 VARLOOP2: do b_ivar = 1, nvars
@@ -2992,7 +3000,7 @@ if ( .not. module_initialized ) call static_init_model
 ! why do we care?  we aren't opening this file, just taking the time
 ! string from the filename itself.
 if ( .not. file_exist(filename) ) then
-   write(string1,*) 'file ', trim(filename),' does not exist.' 
+   write(string1,*) 'file ', trim(filename),' does not exist.'
    call error_handler(E_ERR,'get_analysis_time',string1,source,revision,revdate)
 endif
 
@@ -3134,7 +3142,7 @@ if ( .not. module_initialized ) call static_init_model()
 
 allocate(surface_type(Cells))
 
-! xland(:)   ! land-ocean mask (1=land including sea-ice ; 2=ocean)  
+! xland(:)   ! land-ocean mask (1=land including sea-ice ; 2=ocean)
 ! seaice(:)  ! sea-ice flag (0=no seaice; =1 seaice) - for rttov
 
 surface_type = 0                          ! land
@@ -3918,10 +3926,10 @@ end subroutine verify_state_variables
 !> @todo FIXME if you can call this *after* add_domain() has been
 !> called, then we could use state structure calls for this.
 !>
-!> but right now, it's called first.  so pass in the namelist 
+!> but right now, it's called first.  so pass in the namelist
 !> and boundary lists and base the decision on those.
 !>
-!> this routine can only be called after the namelist is read.  
+!> this routine can only be called after the namelist is read.
 !> also, it's called BY static_init_model() so it can't call
 !> back into it.
 !>
@@ -4344,7 +4352,7 @@ integer,             intent(out) :: istatus(ens_size)
 ! return 2001 mb.  this routine is currently only used to
 ! test for and reject obs which are above the upper limit
 ! (and for a 'VERTISUNDEF' obs it needs to return a large
-! value with no error code).  it's also used if the 
+! value with no error code).  it's also used if the
 ! interpolation type is QTY_PRESSURE.  we don't explicitly
 ! prevent someone from creating a synthetic obs that has
 ! a VERTISUNDEF type, but it doesn't make sense in that case.
@@ -4450,7 +4458,7 @@ integer :: i, status(1)
 !> we are using code from get_state_meta_data to get
 !> the indices for cell id and vert level.  this calls a
 !> modified convert_vert_distrib() routine that doesn't
-!> have to search for the cell centers. 
+!> have to search for the cell centers.
 
 istatus = 0
 
@@ -4513,7 +4521,7 @@ type(location_type), dimension(ens_size) :: surfloc
 
 real(r8) :: weights(3)
 integer  :: ztypein, i, e, n
-integer  :: c(3), ivars(3) 
+integer  :: c(3), ivars(3)
 
 ! assume failure.
 istatus = 1
@@ -4566,7 +4574,7 @@ enddo
 ! if the entire ensemble has missing vertical values we can return now.
 ! otherwise we need to continue to convert the members with good vertical values.
 if (all(zin == missing_r8)) then
-   istatus(:) = 0 
+   istatus(:) = 0
    return
 endif
 
@@ -4700,8 +4708,8 @@ select case (ztypeout)
    ! ------------------------------------------------------------
    case (VERTISSCALEHEIGHT)
 
-     ! Scale Height is defined as:  log(pressure) 
-     ! if namelist item:  no_normalization_of_scale_heights = .true. 
+     ! Scale Height is defined as:  log(pressure)
+     ! if namelist item:  no_normalization_of_scale_heights = .true.
      ! otherwise it is defined as: -log(pressure / surface_pressure)
 
      ! set logicals here so we can do the minimum amount of work.
@@ -4715,10 +4723,10 @@ select case (ztypeout)
      at_surf = (ztypein == VERTISSURFACE)
      do_norm = .not. no_normalization_of_scale_heights
 
-     ! if normalizing pressure and we're on the surface, by definition scale height 
+     ! if normalizing pressure and we're on the surface, by definition scale height
      ! is log(1.0) so skip the rest of these computations.
      if (at_surf .and. do_norm) then
-        zout = 0.0_r8  
+        zout = 0.0_r8
         istatus(:) = 0
         goto 101
      endif
@@ -4784,7 +4792,7 @@ select case (ztypeout)
         end where
 
      else  ! not at surface, and normalizing by surface pressure
-        where (surfp /= MISSING_R8 .and. surfp > 0.0_r8 .and. fullp /= MISSING_R8)   
+        where (surfp /= MISSING_R8 .and. surfp > 0.0_r8 .and. fullp /= MISSING_R8)
            zout = -log(fullp / surfp)
         else where
            zout = MISSING_R8
@@ -4896,7 +4904,7 @@ do e = 1, ens_size
    llv_loc(:, e) = get_location(location(e))
 enddo
 
-!> state_indx is i8, intent(in).  
+!> state_indx is i8, intent(in).
 !> cellid and vert_level are integer, intent(out)
 call find_mpas_indices(state_indx, cellid, vert_level, ndim)
 if (debug > 9 .and. do_output()) print*,'convert_vert_distrib_state: ndim=', ndim
@@ -4911,14 +4919,14 @@ zout(:)    = missing_r8
 ! if the vertical is missing to start with, return it the same way
 ! with the requested type as out.
 do e = 1, ens_size
-   if (zin(e) == missing_r8) then 
+   if (zin(e) == missing_r8) then
       location(e) = set_location(llv_loc(1, e),llv_loc(2, e),missing_r8,ztypeout)
    endif
 enddo
 ! if the entire ensemble has missing vertical values we can return now.
 ! otherwise we need to continue to convert the members with good vertical values.
 ! boundary cells will be updated by the assimilation.
-! if all the vertical localization coord values are missing, 
+! if all the vertical localization coord values are missing,
 ! we don't call this routine again, and return.
 if (all(zin == missing_r8)) then ! .or. on_bound) then
    istatus(:) = 0
@@ -4970,7 +4978,7 @@ select case (ztypeout)
       call error_handler(E_ERR, 'convert_vert_distrib_state',string1,source, revision, revdate)
    endif
 
-   ! Get theta, rho, qv at the interpolated location - pass in cellid we have already located 
+   ! Get theta, rho, qv at the interpolated location - pass in cellid we have already located
    ! to save the search time.
    call compute_scalar_with_barycentric (state_handle, ens_size, location(1), 3, ivars, values, istatus, cellid)
    if( all(istatus /= 0) ) then
@@ -5022,8 +5030,8 @@ select case (ztypeout)
    !>@todo FIXME
    !> whatever we do for pressure, something similar here
 
-     ! Scale Height is defined as:  log(pressure) 
-     ! if namelist item:  no_normalization_of_scale_heights = .true. 
+     ! Scale Height is defined as:  log(pressure)
+     ! if namelist item:  no_normalization_of_scale_heights = .true.
      ! otherwise it is defined as: -log(pressure / surface_pressure)
 
      ! set logicals here so we can do the minimum amount of work.
@@ -5037,10 +5045,10 @@ select case (ztypeout)
      at_surf = (ztypein == VERTISSURFACE)
      do_norm = .not. no_normalization_of_scale_heights
 
-     ! if normalizing pressure and we're on the surface, by definition scale height 
+     ! if normalizing pressure and we're on the surface, by definition scale height
      ! is log(1.0) so skip the rest of these computations.
      if (at_surf .and. do_norm) then
-        zout = 0.0_r8  
+        zout = 0.0_r8
         istatus(:) = 0
         goto 101
      endif
@@ -5116,7 +5124,7 @@ select case (ztypeout)
         end where
 
      else  ! not at surface, and normalizing by surface pressure
-        where (surfp /= MISSING_R8 .and. surfp > 0.0_r8 .and. fullp /= MISSING_R8)   
+        where (surfp /= MISSING_R8 .and. surfp > 0.0_r8 .and. fullp /= MISSING_R8)
            zout = -log(fullp / surfp)
         else where
            zout = MISSING_R8
@@ -5289,7 +5297,7 @@ integer     :: verttype, i, itop
 integer     :: e
 
 ! Initialization
-ier = 0 
+ier = 0
 lower(1:nc, :) = -1
 upper(1:nc, :) = -1
 fract(1:nc, :) = -1.0_r8
@@ -5308,7 +5316,7 @@ fract(1:nc, :) = -1.0_r8
 !is_vertical:   VERTISHEIGHT
 
 ! unpack the location into local vars
-! I think you can do this with the first ensemble member? 
+! I think you can do this with the first ensemble member?
 ! Because they are the same horizontally?
 llv = get_location(loc)
 lon  = llv(1)
@@ -5327,7 +5335,7 @@ endif
 if(verttype == VERTISSURFACE .or. verttype == VERTISUNDEF) then  ! same across the ensemble
    lower(1:nc, :) = 1
    upper(1:nc, :) = 1
-   fract(1:nc, :) = 0.0_r8 
+   fract(1:nc, :) = 0.0_r8
    ier = 0
    return
 endif
@@ -5525,7 +5533,7 @@ do i = 2, nbounds
 
       where (ier(:) == 0) ier(:) = temp_ier(:)
    endif
-   
+
    ! Check if pressure is not monotonically descreased with level.
    if(any(pressure(i, :) > pressure(i-1, :))) then
       if (debug > 0 .and. do_output()) then
@@ -5547,7 +5555,7 @@ do i = 2, nbounds
       if (ier(e) /= 0)    cycle
       if (found_level(e)) cycle
 
-      ! Is pressure between levels i-1 and i?  
+      ! Is pressure between levels i-1 and i?
       ! if so, set the lower and upper level numbers and fraction across.
       ! fraction is 0 at level (i-1) and 1 at level(i).
       if(p(e) >= pressure(i, e)) then
@@ -5726,7 +5734,7 @@ end subroutine get_barycentric_weights
 !> for each ensemble member.  "n" is the number of different
 !> quantities to compute, ival is an array of 'n' progval() indices
 !> to indicate which quantities to compute.
-!> dval(n, ens_size) are the output values, and ier(ens_size) are 
+!> dval(n, ens_size) are the output values, and ier(ens_size) are
 !> the success/error returns for each ensemble member.
 
 subroutine compute_scalar_with_barycentric(state_handle, ens_size, loc, n, ival, dval, ier, this_cellid)
@@ -5801,8 +5809,8 @@ do k=1, n
 
             !> minimize the number of times we call get_state() by
             !> doing all the ensemble members which are between the same
-            !> two vertical levels.  this is true most of the time. 
-            !> in some cases it could be 2 or 3 different pairs of levels because 
+            !> two vertical levels.  this is true most of the time.
+            !> in some cases it could be 2 or 3 different pairs of levels because
             !> of differences in vertical conversion that depends on per-member fields.
             low_state_indx = index1 + low_offset + lower(i,e)-1
             lowval(:) = get_state(low_state_indx, state_handle)
@@ -5875,7 +5883,7 @@ end subroutine compute_surface_data_with_barycentric
 
 subroutine find_triangle(loc, nc, c, weights, ier, this_cellid)
 
-type(location_type), intent(in)  :: loc 
+type(location_type), intent(in)  :: loc
 integer,             intent(out) :: nc
 integer,             intent(out) :: c(:) ! single value - cell id
 real(r8),            intent(out) :: weights(:)
@@ -6055,7 +6063,7 @@ endif
 
 if (debug > 12 .and. do_output()) then
   do e = 1, ens_size
-   if(ier(e) /= 0) then   
+   if(ier(e) /= 0) then
       print *, 'find_vert_indices: e = ', e, ' nc = ', nc, ' ier = ', ier(e)
       print *, 'find_vert_indices: c = ', c
       print *, 'find_vert_indices: lower = ', lower(1:nc, e)
@@ -6101,8 +6109,8 @@ integer :: e ! loop index
 ier  = 0
 uval = MISSING_R8
 
-! FIXME: it would be great to make this cache the last value and 
-! if the location is the same as before and it's asking for V now 
+! FIXME: it would be great to make this cache the last value and
+! if the location is the same as before and it's asking for V now
 ! instead of U, skip the expensive computation.  however, given
 ! how we currently distribute observations the V wind obs will
 ! almost certainly be given to a different task.  if that changes
@@ -6150,7 +6158,7 @@ if (verttype == VERTISPRESSURE) then
    if (all(ier /= 0)) return
 
 else
-   ! need vert index for the vertical level. 
+   ! need vert index for the vertical level.
    ! We do not consider any case for 'u' at full levels.
    call find_vert_level(state_handle, ens_size, loc, nedges, edgelist, &
                         .true., .false., lower, upper, fract, ier)
@@ -6432,7 +6440,7 @@ end subroutine finalize_closest_center
 !> unfortunately both global and regional grids have these
 !> arrays so we have to read them in and check the values
 !> before knowing whether this is a global or regional case.
-!> if regional, keep these arrays in memory. 
+!> if regional, keep these arrays in memory.
 !> if global, discard them.
 
 subroutine set_global_grid(ncid)
@@ -6477,7 +6485,7 @@ end subroutine set_global_grid
 function is_global_grid()
 logical :: is_global_grid
 
-is_global_grid = global_grid 
+is_global_grid = global_grid
 
 end function is_global_grid
 
@@ -6539,7 +6547,7 @@ cell_ok_to_interpolate = cellid
 end function cell_ok_to_interpolate
 
 !------------------------------------------------------------
-!> Determine if this cell is on the boundary, and return true if so.   
+!> Determine if this cell is on the boundary, and return true if so.
 !> if the global flag is set, skip all code and return false immediately.
 !> Unlike the previous version of on_boundary, we do not return true
 !> if any surrounding edges belong to the boundary zone. We will take care
@@ -6974,7 +6982,7 @@ integer,  intent(in)    :: nedges, edgelist(:)
 integer,  intent(out)   :: ier(:)
 
 !>@todo this is set in different places to different values
-integer, parameter :: listsize = 30 
+integer, parameter :: listsize = 30
 !real(r8) :: o_lower(listsize), o_fract(listsize)
 real(r8), allocatable :: o_lower(:,:), o_fract(:,:)
 real(r8) :: x1, x2, x
@@ -7044,7 +7052,7 @@ if (h < lb) then
    ! extrapolate down - not in data values but in level
    ! relative to the height difference in levels 1-2
    extrapolate_level = lb - (((lb - h) + lb) / thickness)
-   
+
 else if (h > ub) then
    ! extrapolate up - not in data values but in level
    ! relative to the height difference in levels nb-1 to nb
@@ -7280,11 +7288,11 @@ subroutine uv_cell_to_edges(zonal_wind, meridional_wind, uedge, full_u)
 !        We read cellsOnEdge and edgeNormalVectors in get_grid.
 !        Here "uedge" is an edge normal wind which can be either a full field or an increment
 !        depending on the optional input (full_u).
-!        if full_u = .true., then the edge wind is replaced by averaging zonal and meridional 
+!        if full_u = .true., then the edge wind is replaced by averaging zonal and meridional
 !        winds at cell centers.
 !        if full_u does not exist, uedge is the analysis increment from the updated cell-center winds.
 !        We do not update/compute uedge in the outermost edge in the regional MPAS.
-! This routine followed the updating part in tend_toEdges in 
+! This routine followed the updating part in tend_toEdges in
 ! MPAS/src/core_atmosphere/physics/mpas_atmphys_todynamics.F.
 
 real(r8), intent(in) :: zonal_wind(:,:)             ! u wind updated from filter
@@ -7329,7 +7337,7 @@ do iEdge = 1, nEdges
    if(.not.on_outermost_edge(iEdge)) then ! we do not update the outermost edge
       cell1 = cellsOnEdge(1,iEdge)
       cell2 = cellsOnEdge(2,iEdge)
-      if((.not.on_outermost_cell(cell1)) .and. (.not.on_outermost_cell(cell2))) then 
+      if((.not.on_outermost_cell(cell1)) .and. (.not.on_outermost_cell(cell2))) then
       uedge(:,iEdge) = zonal_wind(:,cell1)      * 0.5 * (edgeNormalVectors(1,iEdge) * east(1,cell1)   &
                                                       +  edgeNormalVectors(2,iEdge) * east(2,cell1)   &
                                                       +  edgeNormalVectors(3,iEdge) * east(3,cell1))  &
@@ -7374,7 +7382,7 @@ end subroutine r3_normalize
 
 !------------------------------------------------------------------
 
-function theta_to_tk (ens_size, theta, rho, qv, istatus) 
+function theta_to_tk (ens_size, theta, rho, qv, istatus)
 
 ! Compute sensible temperature [K] from potential temperature [K].
 ! code matches computation done in MPAS model
@@ -7410,11 +7418,11 @@ endif
 where (istatus == 0)
 
    theta_m = (1.0_r8 + rvord * qv_nonzero)*theta
-   
+
    where (theta_m > 0.0_r8 .and. rho > 0.0_r8)  ! Check if all the input are positive
 
       exner = ( (rgas/p0) * (rho*theta_m) )**rcv
-   
+
       ! Temperature [K]
       theta_to_tk = theta * exner
 
@@ -7462,7 +7470,7 @@ where (istatus == 0)       ! We only take non-missing tk here
 end where
 
 if ( debug > 1 ) then
-   if( any(istatus /= 0) ) then   
+   if( any(istatus /= 0) ) then
       do e = 1, ens_size
        if (istatus(e) /= 0) then
            write(string2,'("Failed in member,istatus,P[Pa],tk,theta,rho,qv:",2I4,4F12.2,F15.6)') &
