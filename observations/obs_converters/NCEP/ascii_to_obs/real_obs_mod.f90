@@ -16,7 +16,7 @@ use    utilities_mod, only : get_unit, register_module, error_handler, &
                              E_ERR, E_MSG, timestamp, is_longitude_between, &
                              open_file, close_file
 
-use     location_mod, only : VERTISPRESSURE, VERTISSURFACE
+use     location_mod, only : VERTISPRESSURE, VERTISSURFACE, VERTISHEIGHT
 
 use obs_sequence_mod, only : init_obs_sequence, init_obs, obs_sequence_type, obs_type, &
                              set_copy_meta_data, set_qc_meta_data
@@ -528,7 +528,8 @@ obsloop:  do
    elseif(obs_kind_gen == QTY_SURFACE_PRESSURE) then
       obs_value = zob * 100.0_r8  !  for Ps variable only in Pascal
       vloc = lev                  ! station height, not used now for Ps obs
-      which_vert = VERTISSURFACE
+      !which_vert = VERTISSURFACE
+      which_vert = VERTISHEIGHT
    else if(obs_kind_gen == QTY_SPECIFIC_HUMIDITY) then
       obs_err = obs_err*1.0e-3_r8
       obs_value = zob*1.0e-3_r8     !  for Q variable to kg/kg

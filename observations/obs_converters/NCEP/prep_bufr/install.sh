@@ -60,7 +60,7 @@ fi
 if   [ $CCOMP = gnu ] ; then
    cc=gcc ;
 elif [ $CCOMP = intel ] ; then
-   cc=icc ;
+   cc=icx ;
 elif [ $CCOMP = pgi ] ;  then
    cc=pgcc ;
 else
@@ -98,8 +98,8 @@ if [ $ff = nagfor ]; then
 fi
 
 # in any case, add -O for optimized code
-cc="$cc -O"
-ff="$ff -O"
+cc="$cc -O -static-intel"
+ff="$ff -O -static-intel"
 
 #  Compile and archive the Bufr Library
 #  ------------------------------------

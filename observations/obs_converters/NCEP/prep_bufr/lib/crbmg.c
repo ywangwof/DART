@@ -24,7 +24,7 @@ C     NMB      - INTEGER: SIZE (IN BYTES) OF BUFR MESSAGE IN BMG
 C     IRET     - INTEGER: RETURN CODE:
 C                  0 = normal return
 C                  1 = overflow of BMG array
-C                  2 = "7777" indicator not found in expected location 
+C                  2 = "7777" indicator not found in expected location
 C                 -1 = end-of-file encountered while reading
 C                 -2 = I/O error encountered while reading
 C
@@ -43,6 +43,8 @@ C$$$*/
 
 #include "bufrlib.h"
 
+f77int rbytes( char *bmg, f77int *mxmb, f77int isloc, f77int newbytes );
+
 void crbmg( char *bmg, f77int *mxmb, f77int *nmb, f77int *iret )
 {
     f77int i1 = 1, i2 = 2, i3 = 3, i4 = 4, i24 = 24;
@@ -51,7 +53,7 @@ void crbmg( char *bmg, f77int *mxmb, f77int *nmb, f77int *iret )
 
     char errstr[129];
 
-    unsigned short i, nsecs; 
+    unsigned short i, nsecs;
     unsigned int lsec;
 /*
 **  Make sure that a file is open for reading.
