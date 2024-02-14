@@ -98,8 +98,15 @@ if (do_nml_term()) write(     *     , nml=ncepobs_nml)
 !   eee=24.0 
 
     delt = 0.25 !15 minutes
-    eee=real(hour) + delt 
-    bbb=real(hour) - delt
+    ! CSS values in the intermediate ascii file for analysis times at 00z
+    !  have 24 added to them and are between 23 and ~24.5
+    if ( hour .eq. 0 ) then ! CSS
+       eee=real(hour) + delt + 24. ! CSS
+       bbb=real(hour) - delt + 24. ! CSS
+    else ! CSS
+       eee=real(hour) + delt
+       bbb=real(hour) - delt
+    endif ! CSS
 
     seq = real_obs_sequence(year, month, day, hour, max_num, select_obs, &
          ObsBase, ADPUPA, AIRCAR, AIRCFT, SATEMP, SFCSHP, ADPSFC, SATWND, &

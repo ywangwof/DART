@@ -133,7 +133,7 @@ integer :: imin, sec
 integer :: obs_num, calender_type, read_counter
 type(time_type) :: current_day, time_obs, prev_time
 
-integer, parameter :: num_fail_kinds = 8
+integer, parameter :: num_fail_kinds = 9 ! CSS used to be 8, changed to 9
 integer :: iskip(num_fail_kinds)
 integer, parameter :: fail_3Z        = 1
 integer, parameter :: fail_timerange = 2
@@ -143,6 +143,7 @@ integer, parameter :: fail_badkind   = 5
 integer, parameter :: fail_notwanted = 6
 integer, parameter :: fail_badvert   = 7
 integer, parameter :: fail_moisttype = 8
+integer, parameter :: fail_badread   = 9 ! CSS added
 character(len=32) :: skip_reasons(num_fail_kinds) = (/ &
                      'time too early (exactly 03Z)    ', &
                      'time outside bin range          ', &
@@ -151,7 +152,8 @@ character(len=32) :: skip_reasons(num_fail_kinds) = (/ &
                      'unrecognized observation kind   ', &
                      'obs type not on select list     ', &
                      'bad vertical coordinate         ', &
-                     'unwanted moisture type          ' /)
+                     'unwanted moisture type          ', &
+                     'bad read                        ' /) ! CSS added
 
 
 integer :: obs_unit
@@ -239,7 +241,11 @@ obsloop:  do
                               obstype, iqc, subset, pc
    if (io /= 0) then
       write(msgstring1,*)'read error was ',io,' for line ',read_counter
-      call error_handler(E_ERR,'real_obs_sequence', msgstring1, source, revision, revdate)
+     !call error_handler(E_ERR,'real_obs_sequence', msgstring1, source, revision, revdate) ! CSS orig
+      call error_handler(E_MSG,'real_obs_sequence', msgstring1, source, revision, revdate) ! CSS changed E_ERR to E_MSG to not exit
+      read_counter = read_counter + 1  ! CSS increase the counter
+      iskip(fail_badread) = iskip(fail_badread) + 1 ! CSS keep track of the failures
+      cycle obsloop  ! CSS go to next ob
    endif
 
  880 format(f5.2,2f9.4,e12.5,f7.2,f7.2,f9.0,f7.3,i4,i2,1x,a6,i2)
@@ -266,7 +272,7 @@ obsloop:  do
       if (debug) then
          write(msgstring1,*) 'invalid time.  hours = ', time
          write(msgstring2,*) 'desired range is ', bin_beg, ' to ', bin_end
-         call error_handler(E_MSG,'real_obs_sequence',msgstring1, msgstring2)
+         call error_handler(E_MSG,'real_obs_sequence',msgstring1, text2=msgstring2) ! CSS added text2= so msgstring2 would print
       endif
       iskip(fail_timerange) = iskip(fail_timerange) + 1
       cycle obsloop
