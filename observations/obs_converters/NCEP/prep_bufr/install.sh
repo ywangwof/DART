@@ -31,15 +31,15 @@ set -ea
 #  ------------------------------------------------------------------------
  
 if [ "$CCOMP" == "" ]; then
- #CCOMP=gnu
- CCOMP=intel
+ CCOMP=gnu
+ #CCOMP=intel
  #CCOMP=pgi
  #CCOMP=default
 fi
 
 if [ "$FCOMP" == "" ]; then
- #FCOMP=gnu
- FCOMP=intel
+ FCOMP=gnu
+ #FCOMP=intel
  #FCOMP=pgi
  #FCOMP=f77
  #FCOMP=nag   # NOT SUPPORTED
@@ -98,8 +98,8 @@ if [ $ff = nagfor ]; then
 fi
 
 # in any case, add -O for optimized code
-cc="$cc -O -static-intel"
-ff="$ff -O -static-intel"
+cc="$cc -O"
+ff="$ff -O"
 
 #  Compile and archive the Bufr Library
 #  ------------------------------------
