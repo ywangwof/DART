@@ -139,9 +139,9 @@ public ::  get_expected_cwp, set_cbp_ctp, write_cwp, read_cwp, interactive_cwp
 
 ! version controlled file description for error handling, do not edit
 character(len=128), parameter :: &
-   source   = "$URL: https://svn-dares-dart.cgd.ucar.edu/DART/branches/rma_trunk/observations/forward_operators/obs_def_cwp_mod.f90 $", &
-   revision = "$Revision: 11289 $", &
-   revdate  = "$Date: 2017-03-10 15:56:06 -0600 (Fri, 10 Mar 2017) $"
+   source   = "$URL:  $", &
+   revision = "$Revision: unknown $", &
+   revdate  = "$Date: 2024-02-22 $"
 
 logical, save :: module_initialized = .false.
 logical            :: debug = .false.
@@ -166,7 +166,7 @@ integer  :: num_plevels = 60  ! number of intervals if model_levels is F
 ! Storage for the satellite cloud height information required for observations of this type
 integer :: num_cwp_obs = 0
 integer, parameter :: max_cwp_obs = 2000000
-real(r8), allocatable :: cbp_array(:), ctp_array(:)
+real(r8), allocatable :: cbp_array(:), ctp_array(:), obs_array(:)
 
 namelist /obs_def_cwp_nml/ pressure_top,  physics
 
@@ -181,7 +181,8 @@ integer :: iunit, io
 
 ! Allocate space for the metadata
 allocate(cbp_array(max_cwp_obs),  &
-         ctp_array(max_cwp_obs))
+         ctp_array(max_cwp_obs), &
+         obs_array(max_cwp_obs))
 
 module_initialized = .true.
 call register_module(source, revision, revdate)
@@ -267,7 +268,7 @@ else
    read(ifile)    ignored_icwpkey
 endif
 if(debug) print*, 'read in metadata for CWP integral obs ', icwpkey
-if(debug) print*, 'metadata values are: ', cbp_array(icwpkey), ctp_array(icwpkey)
+if(debug) print*, 'metadata values are: ', cbp_array(icwpkey), ctp_array(icwpkey), obs_array(icwpkey)
 
 !if(debug) print *, 'ignoring old key', ignored_icwpkey
 !if(debug) print *, 'return key set to ', icwpkey
@@ -361,7 +362,7 @@ end subroutine set_cbp_ctp
 !                Version 1.3: Feb 16 2016       Modifed to function with netcdf DART version
 !                Version 1.4: Aug 2  2017	Updated for DART-MAN version (TJ / KK).
 !                Version 2.0: 2022              Updated with latest updates from GSI forward operator / obs processing code
-!                Version 2.1: June 15 2023      Updated with GOES_CWP_NIGHT variable for future use
+!                Version 2.1: June 15 2023      Updated with GOES_LWP/IWP_NIGHT variable for future use (highly unlikely)
 !                Version 2.2: Nov 20 2023       Added other night time CWP variable information / check for below freezing for LWP
 !   
 !
@@ -383,7 +384,7 @@ real(r8), dimension(ens_size, max_plevels+1) :: press, qc, qi, qr, qg, qha, qs, 
 real(r8), dimension(ens_size) :: psfc, press_int
 real(r8), dimension(ens_size) :: cwp, iwp, lwp, es, qsat
 real(r8) :: lon, lat, height, obsloc(3)
-real(r8) :: lon2, q, p, satctp, satcbp, layer_rh, layer_tk
+real(r8) :: lon2, q, p, satctp, satcbp, satcwp, layer_rh, layer_tk
 real(r8) :: wrfcbp, wrfctp
 integer :: which_vert, k, mink, maxk, lastk, first_non_surface_level, bbb, ttt, i
 integer :: this_istatus(ens_size)
@@ -685,9 +686,9 @@ if (maxk > mink) then
 		
 		iwp(i) = iwp(i) + 0.5_r8 * ( (qi(i, k) + qi(i, k+1)) + (qg(i, k) + qg(i, k+1)) + &
                       (qs(i, k) + qs(i, k+1)) + (qha(i, k) + qha(i, k+1)) ) * (press(i, k) - press(i, k+1)) 
-		
+
         endif
-		
+
 !	where (cwp < 0.0 .or. cwp > 200.0) 
 !print '(I5, 4F10.3, 12F12.6,4F10.3)', k, press(:, k), press(:, k+1), lon, lat, qc(:, k), qc(:, k+1), &
 !        qr(:, k), qr(:, k+1), qi(:, k), qi(:, k+1), qs(:, k), qs(:, k+1), qg(:, k) , qg(:, k+1), qha(:, k), qha(:, k+1), &
@@ -699,8 +700,10 @@ if (maxk > mink) then
   layer_rh = sum(rh(i, mink:maxk)) / (max(1,size(rh(i, mink:maxk))))
   layer_tk = sum(tmpk(i, mink:maxk)) / (max(1,size(tmpk(i, mink:maxk))))
 
-  ! IF environment is nearly staturated, do not assimilated LWP
+  ! IF environment is nearly staturated, do not assimilated IWP/LWP
+  if ( trim(varname) == "GOES_IWP_PATH" .and. layer_rh .gt. 0.975 ) cwp(i) = -998.0
   if ( trim(varname) == "GOES_LWP_PATH" .and. layer_rh .gt. 0.975 ) lwp(i) = -998.0
+  if ( trim(varname) == "GOES_IWP_NIGHT" .and. layer_rh .gt. 0.975 ) cwp(i) = -998.0
   if ( trim(varname) == "GOES_LWP_NIGHT" .and. layer_rh .gt. 0.975 ) lwp(i) = -998.0
 
   ! CHECK IF Layer temperature is below freezing for LWP retreivals...
@@ -725,9 +728,16 @@ where (lwp > 0.0 ) lwp = 1.0 * lwp /(gravity)   ! -> kg/m2
 where (iwp > 0.0 ) iwp = 1.0 * iwp /(gravity)   ! -> kg/m2
 
 !SET MAX MODEL CWP VALUE TO 5 kg/m2 to correspond with satellite saturation value
-where (cwp > 5.0 ) cwp = 5.0
-where (iwp > 5.0 ) iwp = 5.0
-where (lwp > 3.0 ) lwp = 3.0
+!where (cwp > 5.0 ) cwp = 5.0
+!where (iwp > 5.0 ) iwp = 5.0
+!where (lwp > 3.0 ) lwp = 3.0
+
+!IF MODEL CWP > Saturation CWP Retrival Value
+!    set forward operator output to bad
+where (cwp > 6.0 ) cwp = -997.0
+where (iwp > 6.0 ) iwp = -997.0
+where (lwp > 3.0 ) lwp = -997.0
+
 
 !********************* ASSIGN CORRECT PATH (ALL/ICE/WATER) TO OUTPUT VARIABLE
 !out_wp(:) = cwp
@@ -735,7 +745,7 @@ if ( trim(varname) == "GOES_CWP_PATH" ) out_wp = cwp
 if ( trim(varname) == "GOES_CWP_ZERO" ) out_wp = cwp
 if ( trim(varname) == "GOES_IWP_PATH" ) out_wp = cwp   !iwp	
 if ( trim(varname) == "GOES_LWP_PATH" ) out_wp = lwp
-if ( trim(varname) == "GOES_LWP0_PATH" ) out_wp = iwp
+if ( trim(varname) == "GOES_LWP0_PATH" ) out_wp = iwp !don't use
 
 !NIGHT TIME DATA
 if ( trim(varname) == "GOES_LWP_NIGHT" ) out_wp = lwp

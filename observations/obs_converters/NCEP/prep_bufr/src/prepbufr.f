@@ -472,12 +472,13 @@ c----------------------------------------------------------------------
         if(vqm .eq. 0) voe = voe*0.9
         if(vqm .eq. 3) voe = voe*1.2
 
-       ! SET DEFULAT ERRORS IF MISSING ABOVE
+       ! SET DEFULAT ERRORS IF MISSING ABOVE (TAJ)
        if ( toe > 1.e9 ) toe = 2.0
        if ( qoe > 1.e9 ) qoe = 0.1
        if ( uoe > 1.e9 ) uoe = 2.0
        if ( voe > 1.e9 ) voe = 2.0
-       if ( poe > 1.e9 ) poe = 20.0
+       if ( poe > 1.e9 ) poe = 2.0
+       if ( zoe > 1.e9 ) zoe = 20.0
 
 
 c    write out temperature observation from ADPUPA, AIRCAR, AIRCFT

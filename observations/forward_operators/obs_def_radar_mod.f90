@@ -894,17 +894,11 @@ if (return_now) return
 
 
 call interpolate(state_handle, ens_size, location, QTY_VERTICAL_VELOCITY, w, w_istatus)
-if (debug) then
-    write(0,'(a,36I3)') 'w_istatus=',w_istatus
-endif
 call track_status(ens_size, w_istatus, radial_vel, istatus, return_now)
 if (return_now) return
 
 
 call get_expected_fall_velocity(state_handle, ens_size, location, precip_fall_speed, p_istatus)
-if (debug) then
-    write(0,'(a,36I3)') 'p_istatus=',p_istatus
-endif
 call track_status(ens_size, p_istatus, radial_vel, istatus, return_now)
 if (return_now) return
 

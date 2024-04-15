@@ -319,9 +319,9 @@ use    utilities_mod, only : register_module, error_handler, E_ERR, E_WARN, E_MS
                              do_nml_term, check_namelist_read, find_namelist_in_file, &
                              interactive_r, interactive_i, open_file, file_exist, &
                              close_file
-
+use       sort_mod,   only : index_sort
 use     location_mod, only : location_type, set_location, get_location, &
-                             VERTISUNDEF, VERTISHEIGHT, VERTISLEVEL, VERTISSURFACE
+                             VERTISPRESSURE, VERTISUNDEF, VERTISHEIGHT, VERTISLEVEL, VERTISSURFACE
 
 use  assim_model_mod, only : interpolate
 
@@ -401,7 +401,8 @@ public ::         set_visir_metadata, &
                 write_rttov_metadata, &
           interactive_rttov_metadata, &
                get_expected_radiance, &
-            get_rttov_option_logical
+            get_rttov_option_logical, &
+                         get_channel
 
 ! The rttov_test.f90 program uses these, but no one else should.
 
@@ -595,7 +596,7 @@ end type rttov_platform_type
 type(rttov_platform_type), pointer :: platforms(:)
 
 ! version controlled file description for error handling, do not edit
-character(len=*), parameter :: source   = 'obs_def_rttov_mod.f90'
+character(len=*), parameter :: source   = 'obs_def_rttov13_mod.f90'
 character(len=*), parameter :: revision = ''
 character(len=*), parameter :: revdate  = ''
 
@@ -632,7 +633,7 @@ character(len=512)   :: rttov_sensor_db_file = 'unspecified'
 ! -----------------------------------------------------------------------------
 ! DART/RTTOV options in the input.nml namelist.
 ! 
-! DART exposes all of the RTTOV 12.3 options available and passes them to 
+! DART exposes all of the RTTOV 13 options available and passes them to 
 ! RTTOV with little to no additional checking for consistency. The default in 
 ! most cases can be used and need not be specified in the namelist. 
 !
@@ -711,6 +712,9 @@ logical              :: use_htfrtc           = .false.  ! use HTFRTC of Havemann
 integer              :: htfrtc_n_pc          = -1       ! number of PCs to use (HTFRTC only, max 300)
 logical              :: htfrtc_simple_cloud  = .false.  ! use simple-cloud scattering (HTFRTC only)
 logical              :: htfrtc_overcast      = .false.  ! calculate overcast radiances (HTFRTC only)
+real(r8)             :: wfetc_value          = 100000.0_r8 ! Real wfetc Wind fetch (m) (length of water over which the wind has blown, typical
+                                                           ! value 100000m for open ocean). Used if wfetc not provided by model.
+
 
 namelist / obs_def_rttov_nml/ rttov_sensor_db_file,   &
                               first_lvl_is_sfc,       &
@@ -782,7 +786,9 @@ namelist / obs_def_rttov_nml/ rttov_sensor_db_file,   &
                               use_htfrtc,             &
                               htfrtc_n_pc,            &
                               htfrtc_simple_cloud,    &
-                              htfrtc_overcast
+                              htfrtc_overcast,        &
+                              wfetc_value
+
 
 type(atmos_profile_type)     :: atmos
 type(trace_gas_profile_type) :: trace_gas
@@ -1899,12 +1905,12 @@ subroutine do_forward_model(ens_size, nlevels, flavor, location, &
    atmos, trace_gas, clouds, aerosols, sensor, channel,          &
    first_lvl_is_sfc, mw_clear_sky_only, clw_scheme, ice_scheme,  &
    idg_scheme, aerosl_type, do_lambertian, use_totalice,         &
-   use_zeeman, radiances, error_status, visir_md, mw_md)
+   use_zeeman, radiances, error_status, visir_md, mw_md, peakw)
 
 integer,                                intent(in)  :: ens_size
 integer,                                intent(in)  :: nlevels
 integer,                                intent(in)  :: flavor
-type(location_type),                    intent(in)  :: location
+type(location_type),                    intent(inout)  :: location
 type(atmos_profile_type),               intent(in)  :: atmos
 type(trace_gas_profile_type),           intent(in)  :: trace_gas
 type(cloud_profile_type),               intent(in)  :: clouds
@@ -1924,6 +1930,8 @@ real(r8),                               intent(out) :: radiances(ens_size)
 integer,                                intent(out) :: error_status(ens_size)
 type(visir_metadata_type),     pointer, intent(in)  :: visir_md
 type(mw_metadata_type),        pointer, intent(in)  :: mw_md
+real(r8),                               intent(out) :: peakw
+
 
 character(len=obstypelength) :: obs_qty_string
 integer                      :: obs_type_num
@@ -1952,6 +1960,13 @@ logical :: is_mw
 logical :: is_cumulus
 integer :: instrument(3)
 integer :: surftype
+
+! TAJ WEIGHTING FUNCTION STUFF
+integer :: peakloc
+real(r8) :: temptran(nlevels)
+real(r8) :: weighting_fn(nlevels-1)
+integer :: sweighting_fn(nlevels-1)
+real(r8) :: peak_weight(ens_size)
 
 if (.not. associated(sensor)) then
    write(string1,*)'Passed an unassociated sensor'
@@ -2214,6 +2229,7 @@ DO imem = 1, ens_size
          end if
 
          ! depending on the vertical velocity and land type, classify clouds the way RTTOV wants 
+         runtime % profiles(imem) % cloud(:,:) = 0.0_jprb
          if (.not. is_cumulus) then
             ! stratus
             if (surftype == 0) then
@@ -2345,6 +2361,8 @@ DO imem = 1, ens_size
    if (allocated(atmos % wfetch)) then
       ! Wind fetch over the ocean (m)
       runtime % profiles(imem) % s2m % wfetc = atmos % wfetch(imem)  
+   else
+      runtime % profiles(imem) % s2m % wfetc = wfetc_value
    end if
    
    ! Surface type (0=land, 1=sea, 2=sea-ice)
@@ -2527,6 +2545,16 @@ if (obs_type_num == QTY_RADIANCE) then
 elseif (obs_type_num == QTY_BRIGHTNESS_TEMPERATURE) then
    do imem = 1, ens_size
       radiances(imem) = runtime % radiance % bt(imem)
+
+      ! Find peak weighting function pressure level (Thomas Jones, Feb 24, 2024)
+      temptran(:) = runtime % transmission % tau_levels(:,imem)
+
+      weighting_fn = ( temptran(2:nlevels) - temptran(1:nlevels-1) ) / ( LOG(runtime % profiles(imem) % p(1:nlevels-1)) - LOG(runtime % profiles(imem) % p(2:nlevels)) )
+      call index_sort(weighting_fn, sweighting_fn, nlevels-1)
+
+      peakloc=sweighting_fn(nlevels-1)
+      peak_weight(imem) = runtime % profiles(imem) % p(peakloc)
+      !print*, imem, peakloc, runtime % radiance % bt(imem), peak_weight(imem) 
    end do
    if (debug) then
       print*, 'RADIANCE % BT for ',trim(obs_qty_string),'= ', radiances(:)
@@ -2542,6 +2570,11 @@ else
    call error_handler(E_ERR, 'unknown observation quantity for ' // trim(obs_qty_string), &
       source, revision, revdate)
 end if
+
+!! RESET VETRICAL COORDINATE TO PEAK WEIGHTING LEVEL
+peakw = SUM(peak_weight(:))/ens_size
+!print*, 'ENS_MEAN WF: ', peakw
+!location = set_location(lon, lat, peakw*100.0, VERTISPRESSURE )
 
 IF (errorstatus /= errorstatus_success) THEN
   WRITE (*,*) 'rttov_direct error'
@@ -3429,7 +3462,7 @@ subroutine get_expected_radiance(obs_kind_ind, state_handle, ens_size, location,
 integer,             intent(in)  :: obs_kind_ind
 type(ensemble_type), intent(in)  :: state_handle
 integer,             intent(in)  :: ens_size
-type(location_type), intent(in)  :: location          ! location of obs
+type(location_type), intent(inout)  :: location          ! location of obs
 integer,             intent(in)  :: key               ! key into module metadata
 integer,             intent(in)  :: flavor            ! flavor of obs
 real(r8),            intent(out) :: val(ens_size)     ! value of obs
@@ -3441,9 +3474,10 @@ integer  :: instrument(3)
 integer :: this_istatus(ens_size)
 
 integer  :: i
-real(r8) :: loc_array(3)
+real(r8) :: loc_array(3), obsloc_out(3)
 real(r8) :: loc_lon, loc_lat
 real(r8) :: loc_value(ens_size)
+real(r8) :: peakw
 type(location_type) :: loc
 integer :: maxlevels, numlevels
 
@@ -3915,12 +3949,16 @@ call do_forward_model(ens_size=ens_size,                    &
                       radiances=val,                        &
                       error_status=this_istatus,            &
                       visir_md=visir_md,                    &
-                      mw_md=mw_md) 
+                      mw_md=mw_md, & 
+                      peakw=peakw )
 
 ! copy the status from this_istatus to istatus, set missing if error
 call track_status(ens_size, this_istatus, val, istatus, return_now)
 
 if (debug) then
+   obsloc_out   = get_location(location)
+   print*, 'location = ', obsloc_out(:)
+   print*, 'peakw    = ', peakw
    print*, 'istatus  = ', istatus 
    print*, 'radiance = ', val
 end if

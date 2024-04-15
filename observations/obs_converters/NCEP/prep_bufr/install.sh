@@ -99,7 +99,7 @@ fi
 
 # in any case, add -O for optimized code
 cc="$cc -O"
-ff="$ff -O"
+ff="$ff -O -fallow-argument-mismatch"
 
 #  Compile and archive the Bufr Library
 #  ------------------------------------

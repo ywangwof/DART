@@ -118,11 +118,11 @@ if (do_nml_term()) write(     *     , nml=ncepobs_nml)
     !output_name = 'obs_seq.'//obsdate
     output_name = 'obs_seq.bufr'
 
-    print*, output_name
+    print*, "output_name =", output_name
 
     call write_obs_seq(seq, output_name)
 
-    print*, 'I GOT HERE 4:'
+    !print*, 'I GOT HERE 4:'
     ! release the memory of the seq.
     call destroy_obs_sequence(seq)
 
