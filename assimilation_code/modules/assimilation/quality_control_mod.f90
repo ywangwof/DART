@@ -36,7 +36,7 @@ public :: initialize_qc, input_qc_ok, get_dart_qc, check_outlier_threshold, &
           DARTQC_ASSIM_FAILED_POST_FOP, DARTQC_EVAL_FAILED_POST_FOP, &
           DARTQC_FAILED_FOP, DARTQC_NOT_IN_NAMELIST, &
           DARTQC_BAD_INCOMING_QC, DARTQC_FAILED_OUTLIER_TEST, &
-          DARTQC_FAILED_VERT_CONVERT
+          DARTQC_FAILED_VERT_CONVERT, DARTQC_FAILED_INLIER_TEST
 
 character(len=*), parameter :: source = 'quality_control_mod.f90'
 
@@ -51,6 +51,7 @@ integer, parameter :: DARTQC_BAD_INCOMING_QC       = 6
 integer, parameter :: DARTQC_FAILED_OUTLIER_TEST   = 7
 integer, parameter :: DARTQC_FAILED_VERT_CONVERT   = 8
 !integer, parameter :: DARTQC_OUTSIDE_DOMAIN        = 9  ! we have no way (yet) for the model_mod to signal this
+integer, parameter :: DARTQC_FAILED_INLIER_TEST    = 10
 
 !------------------------------------------------------------------------------
 ! namelist parameters
@@ -58,10 +59,11 @@ integer, parameter :: DARTQC_FAILED_VERT_CONVERT   = 8
 
 real(r8) :: input_qc_threshold = 3.0_r8  ! values larger than input_qc_threshold will be rejected
 real(r8) :: outlier_threshold  = -1.0_r8
+real(r8) :: inlier_threshold  = 0.0_r8
 
 logical  :: enable_special_outlier_code = .false. ! user defined outlier threshold code
 
-namelist / quality_control_nml / input_qc_threshold, outlier_threshold,  &
+namelist / quality_control_nml / input_qc_threshold, outlier_threshold, inlier_threshold,  &
    enable_special_outlier_code
 !------------------------------------------------------------------------------
 
@@ -97,6 +99,14 @@ if(do_output()) then
    else
       write(msgstring, '(A,F12.6,A)') 'Will reject obs values more than', outlier_threshold, ' sigma from mean'
    endif
+
+   if (inlier_threshold <= 0.0_r8) then
+      write(msgstring, '(A)') 'No observation inlier threshold rejection will be done'
+   else
+      write(msgstring, '(A,F12.6,A)') 'Will reject obs values less than', inlier_threshold, ' sigma from mean'
+   endif
+
+
    call error_handler(E_MSG,'quality_control_mod:', msgstring)
 
    ! if doing something special with outlier threshold, say so
@@ -251,7 +261,7 @@ integer,                 intent(inout) :: dart_qc !!  possibly modified DART QC
 
 real(r8) :: error, diff_sd, ratio
 
-logical  :: failed
+logical  :: failed, infailed
 
 ! FIX ME: could be a loop if we consider groups
 
@@ -284,9 +294,15 @@ else
    if ( outlier_threshold < 0 ) return ! don't modify dart_qc if no outlier check
    failed = (ratio > outlier_threshold)
 endif
-
 if (failed) then
    dart_qc = DARTQC_FAILED_OUTLIER_TEST
+endif
+
+! INLIER THRESHOLD TEST (TAJ)
+if ( inlier_threshold < 0 ) return ! don't modify dart_qc if no inlier check   
+infailed = (ratio < inlier_threshold)
+if (infailed) then
+   dart_qc = DARTQC_FAILED_INLIER_TEST
 endif
 
 end subroutine check_outlier_threshold
