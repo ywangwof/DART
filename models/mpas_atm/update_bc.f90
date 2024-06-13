@@ -58,9 +58,11 @@ character(len=256)  :: update_boundary_file_list = 'boundary_inout.txt'
 integer             :: debug = 0
 logical             :: lbc_update_from_reconstructed_winds = .true.
 logical             :: lbc_update_winds_from_increments    = .true.
+logical             :: lbc_mp_nssl_variables = .true.
 
 
 namelist /update_bc_nml/ update_analysis_file_list, update_boundary_file_list, debug, &
+                         lbc_mp_nssl_variables, &
                          lbc_update_from_reconstructed_winds, lbc_update_winds_from_increments
 
 !----------------------------------------------------------------------
@@ -99,7 +101,7 @@ bdy_template_filename = get_next_filename(update_boundary_file_list, 1)
 
 ! Note that force_u_into_state should be called before static_init_model, which is unusual.
 call force_u_into_state()
-call set_lbc_variables(bdy_template_filename)
+call set_lbc_variables(bdy_template_filename, lbc_mp_nssl_variables)
 
 call static_init_model()
 call get_init_template_filename(static_filename)

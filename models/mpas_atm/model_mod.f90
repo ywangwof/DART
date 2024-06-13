@@ -2092,11 +2092,13 @@ end subroutine get_init_template_filename
 ! the boundary file variables are fixed by the model and so we
 ! don't allow the user to set them via namelist
 
-subroutine set_lbc_variables(template_filename)
+subroutine set_lbc_variables(template_filename, mp_nssl_variables)
 
 character(len=*), intent(in) :: template_filename
+logical,          intent(in) :: mp_nssl_variables
 
 integer :: ncid
+integer :: last_index
 
 bdy_template_filename = template_filename
 
@@ -2110,19 +2112,27 @@ lbc_variables(4) = 'lbc_rho'
 lbc_variables(5) = 'lbc_theta'
 lbc_variables(6) = 'lbc_u'
 lbc_variables(7) = 'lbc_w'
-lbc_variables(8) = 'lbc_qi'  ! CSS added elements 8-15 
+lbc_variables(8) = 'lbc_qi'  ! CSS added elements 8-15
 lbc_variables(9) = 'lbc_qs'
 lbc_variables(10) = 'lbc_qg'
 lbc_variables(11) = 'lbc_nr'
 lbc_variables(12) = 'lbc_ni'
-lbc_variables(13) = 'lbc_nc'
-lbc_variables(14) = 'lbc_ns'
-lbc_variables(15) = 'lbc_ng'
+last_index = 12
+if (mp_nssl_variables) then
+    lbc_variables(last_index+1) = 'lbc_qh'
+    lbc_variables(last_index+2) = 'lbc_nc'
+    lbc_variables(last_index+3) = 'lbc_ns'
+    lbc_variables(last_index+4) = 'lbc_ng'
+    lbc_variables(last_index+5) = 'lbc_nh'
+    lbc_variables(last_index+6) = 'lbc_volg'
+    lbc_variables(last_index+7) = 'lbc_volh'
+    last_index = last_index+7
+endif
 
 ncid = nc_open_file_readonly(template_filename, 'set_lbc_variables')
 if (nc_variable_exists(ncid, 'lbc_ur')) then
-   lbc_variables(8) = 'lbc_ur'
-   lbc_variables(9) = 'lbc_vr'
+   lbc_variables(last_index+1) = 'lbc_ur'
+   lbc_variables(last_index+2) = 'lbc_vr'
    lbc_file_has_reconstructed_winds = .true.
 endif
 call nc_close_file(ncid)
