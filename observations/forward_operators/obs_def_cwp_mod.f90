@@ -728,15 +728,15 @@ where (lwp > 0.0 ) lwp = 1.0 * lwp /(gravity)   ! -> kg/m2
 where (iwp > 0.0 ) iwp = 1.0 * iwp /(gravity)   ! -> kg/m2
 
 !SET MAX MODEL CWP VALUE TO 5 kg/m2 to correspond with satellite saturation value
-!where (cwp > 5.0 ) cwp = 5.0
-!where (iwp > 5.0 ) iwp = 5.0
-!where (lwp > 3.0 ) lwp = 3.0
+where (cwp > 5.0 ) cwp = 5.0
+where (iwp > 5.0 ) iwp = 5.0
+where (lwp > 3.0 ) lwp = 3.0
 
 !IF MODEL CWP > Saturation CWP Retrival Value
 !    set forward operator output to bad
-where (cwp > 6.0 ) cwp = -997.0
-where (iwp > 6.0 ) iwp = -997.0
-where (lwp > 3.0 ) lwp = -997.0
+!where (cwp > 6.0 ) cwp = -997.0
+!where (iwp > 6.0 ) iwp = -997.0
+!where (lwp > 3.0 ) lwp = -997.0
 
 
 !********************* ASSIGN CORRECT PATH (ALL/ICE/WATER) TO OUTPUT VARIABLE
