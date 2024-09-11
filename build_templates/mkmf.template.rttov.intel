@@ -80,7 +80,7 @@
 #                blocks before stopping to do i/o to disk.  an alternative at
 #                runtime is to set FORT_BUFFERED to 'true' in your environment.
 #                (e.g. csh family: setenv FORT_BUFFERED true    or
-#                ksh family: export FORT_BUFFERED=true).  
+#                ksh family: export FORT_BUFFERED=true).
 #
 # FFLAGS   possibly useful, not normally used by DART
 #     -fpp     run Fortran preprocessor on source files prior to compilation
@@ -103,16 +103,16 @@
 #
 # IF YOU HAVE MORE CURRENT COMPILER INFORMATION, PLEASE SHARE IT WITH US.
 
-MPIFC = mpif90
-MPILD = mpif90
+MPIFC = mpifort
+MPILD = mpifort
 FC = ifort
-LD = ifort
+LD = mpifort
 
 # DISCUSSION ABOUT RTTOV. DART is designed to work with RTTOV v12.3.
-# There have been non-backwards compatible changes throughout the 
+# There have been non-backwards compatible changes throughout the
 # life-cycle of RTTOV (and more to be expected), so changing the
 # RTTOV version will required additional effort to get running.
-# You should install RTTOV 12.3 with HDF support. See 
+# You should install RTTOV 12.3 with HDF support. See
 # https://www.nwpsaf.eu/site/software/rttov/
 # for more information on installing RTTOV.
 
@@ -125,7 +125,7 @@ LD = ifort
 #
 # NETCDF = /opt/local
 # HDFEOS5 = $(NETCDF)
- RTTOV = /glade/work/ywang/tools/rttov13_2
+ RTTOV = /scratch/ywang/tools/intel/rttov132
 
 RTTOV_VERSION = 13
 
@@ -135,13 +135,13 @@ HDFEOS5 = $(NCAR_ROOT_HDF5)
 
 RTLIBS = -lrttov$(RTTOV_VERSION)_wrapper    -lrttov$(RTTOV_VERSION)_mw_scatt -lrttov$(RTTOV_VERSION)_brdf_atlas \
          -lrttov$(RTTOV_VERSION)_emis_atlas -lrttov$(RTTOV_VERSION)_other    -lrttov$(RTTOV_VERSION)_parallel \
-         -lrttov$(RTTOV_VERSION)_coef_io    -lrttov$(RTTOV_VERSION)_hdf      -lrttov$(RTTOV_VERSION)_main 
+         -lrttov$(RTTOV_VERSION)_coef_io    -lrttov$(RTTOV_VERSION)_main
 
 INCS = -I$(NETCDF)/include -I$(HDFEOS5)/include -I$(RTTOV)/include -I$(RTTOV)/mod
 
 LIBS = -L$(NETCDF)/lib -lnetcdff -lnetcdf \
-       -L$(HDFEOS5)/lib -lhdf5_hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 \
-       -L$(RTTOV)/lib  $(RTLIBS) 
+       -L$(HDFEOS5)/lib -lhdf5_hl_fortran -lhdf5_hl -lhdf5_fortran -lhdf5 -lm -lz -lbz2 -lzstd -lcurl -lstdc++ \
+       -L$(RTTOV)/lib  $(RTLIBS)
 
 FFLAGS  = -O2 -assume buffered_io $(INCS)
 LDFLAGS = $(FFLAGS) $(LIBS)
