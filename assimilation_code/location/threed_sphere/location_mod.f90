@@ -619,9 +619,17 @@ real(r8), intent(in) :: vert_loc
 integer,  intent(in) :: which_vert
 type (location_type) :: set_location_single
 
+real(r8) :: lon_local
+
 if ( .not. module_initialized ) call initialize_module()
 
-if(lon < 0.0_r8 .or. lon > 360.0_r8) then
+if (lon < 0.0_r8) then
+   lon_local = lon + 360.0_r8
+else
+   lon_local = lon
+endif
+
+if(lon_local < 0.0_r8 .or. lon_local > 360.0_r8) then
    write(msgstring,*)'longitude (',lon,') is not within range [0,360]'
    call error_handler(E_ERR, 'set_location', msgstring, source)
 endif
@@ -631,7 +639,7 @@ if(lat < -90.0_r8 .or. lat > 90.0_r8) then
    call error_handler(E_ERR, 'set_location', msgstring, source)
 endif
 
-set_location_single%lon = lon * DEG2RAD
+set_location_single%lon = lon_local * DEG2RAD
 set_location_single%lat = lat * DEG2RAD
 
 if(which_vert < VERTISUNDEF .or. which_vert == 0 .or. which_vert > VERTISSCALEHEIGHT) then

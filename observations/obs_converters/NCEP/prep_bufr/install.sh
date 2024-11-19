@@ -31,15 +31,15 @@ set -ea
 #  ------------------------------------------------------------------------
  
 if [ "$CCOMP" == "" ]; then
- CCOMP=gnu
- #CCOMP=intel
+ #CCOMP=gnu
+ CCOMP=intel
  #CCOMP=pgi
  #CCOMP=default
 fi
 
 if [ "$FCOMP" == "" ]; then
- FCOMP=gnu
- #FCOMP=intel
+ #FCOMP=gnu
+ FCOMP=intel
  #FCOMP=pgi
  #FCOMP=f77
  #FCOMP=nag   # NOT SUPPORTED
@@ -99,7 +99,7 @@ fi
 
 # in any case, add -O for optimized code
 cc="$cc -O"
-ff="$ff -O -fallow-argument-mismatch"
+ff="$ff -O2"
 
 #  Compile and archive the Bufr Library
 #  ------------------------------------
