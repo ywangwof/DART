@@ -2585,7 +2585,7 @@ CELLS: do cellid = 1, nCells
       ! HA: double-check if dimensions are the same between lbc_domid and anl_domid.
       call find_mpas_dims(anl_domid, a_ivar, adims, dima)
       if(dims(1) /= dima(1) .or. dims(2) /= dima(2)) then
-         write(string1, *) 'Dimension mismatches:',dims,' vs.',dima
+         write(string1, *) 'Dimension mismatches '//trim(avarname)//':',dims,' vs.',dima
          call error_handler(E_ERR,'statevector_to_boundary_file',string1,&
                             source,revision,revdate)
          exit
