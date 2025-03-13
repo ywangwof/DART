@@ -125,7 +125,7 @@ LD = mpifort
 #
 # NETCDF = /opt/local
 # HDFEOS5 = $(NETCDF)
- RTTOV = /scratch/ywang/tools/intel/rttov132
+ RTTOV = /home/yunheng.wang/tools/intel/rttov132
 
 RTTOV_VERSION = 13
 
