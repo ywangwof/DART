@@ -104,7 +104,7 @@ use     obs_kind_mod, only : get_index_for_quantity,       &
                              QTY_SURFACE_TYPE,             &  ! for rttov
                              QTY_CLOUD_FRACTION               ! for rttov
 
-use mpi_utilities_mod, only: my_task_id, broadcast_minmax
+use mpi_utilities_mod, only: my_task_id, all_reduce_min_max
 
 use    random_seq_mod, only: random_seq_type, init_random_seq, random_gaussian
 
@@ -209,11 +209,11 @@ logical, save :: module_initialized = .false.
 integer, parameter :: TIMELEN = 19
 
 ! Real (physical) constants as defined exactly in MPAS.
-! redefined here for consistency with the model (MPAS/src/framework/mpas_constants.F).
-real(r8), parameter :: rgas = 287.0_r8  ! = R_d (Gas constant for dry air [J kg-1 K-1])
-real(r8), parameter :: rv = 461.6_r8    ! = R_v (Gas constant for water varpor [J kg-1 K-1])
-real(r8), parameter :: cp = 7.0_r8*rgas/2.0_r8  ! = 1004.5
-real(r8), parameter :: cv = cp-rgas     ! = 717.5
+! redefined here for consistency with the model.
+real(r8), parameter :: rgas = 287.0_r8  ! Constant: Gas constant for dry air [J kg-1 K-1]
+real(r8), parameter :: rv = 461.6_r8    ! Constant: Gas constant for water vapor [J kg-1 K-1]
+real(r8), parameter :: cp = 7.0_r8*rgas/2.0_r8 ! = 1004.5 Constant: Specific heat of dry air at constant pressure [J kg-1 K-1] 
+real(r8), parameter :: cv = cp - rgas          ! = 717.5  Constant: Specific heat of dry air at constant volume [J kg-1 K-1]
 real(r8), parameter :: p0 = 100000.0_r8
 real(r8), parameter :: rcv = rgas/(cp-rgas)
 real(r8), parameter :: rvord = rv/rgas           ! = 1.6083623693379792
@@ -1867,7 +1867,7 @@ do i = 1, get_num_variables(anl_domid)
 enddo
 
 ! get global min/max for each variable
-call broadcast_minmax(min_var, max_var, num_variables)
+call all_reduce_min_max(min_var, max_var, num_variables)
 deallocate(within_range)
 
 call init_random_seq(random_seq, my_task_id()+1)
@@ -4997,7 +4997,6 @@ select case (ztypeout)
 
    zout(:) = vert_level
    istatus(:) = 0
-
    if (debug > 9 .and. do_output()) then
       write(string2,'("zout_in_level for member 1:",F10.2)') zout(1)
       call error_handler(E_MSG, 'convert_vert_distrib_state',string2,source, revision, revdate)
@@ -5090,7 +5089,7 @@ select case (ztypeout)
      !  surf F, norm F:  need fullp only
      !  surf F, norm T:  need both surfp and fullp
 
-     at_surf = (ztypein == VERTISSURFACE)
+     at_surf = (ztypein == VERTISSURFACE)  !HK ztypin is set to VERTISLEVEL before entering this case statement
      do_norm = .not. no_normalization_of_scale_heights
 
      ! if normalizing pressure and we're on the surface, by definition scale height

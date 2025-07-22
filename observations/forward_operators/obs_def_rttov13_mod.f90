@@ -715,7 +715,6 @@ logical              :: htfrtc_overcast      = .false.  ! calculate overcast rad
 real(r8)             :: wfetc_value          = 100000.0_r8 ! Real wfetc Wind fetch (m) (length of water over which the wind has blown, typical
                                                            ! value 100000m for open ocean). Used if wfetc not provided by model.
 
-
 namelist / obs_def_rttov_nml/ rttov_sensor_db_file,   &
                               first_lvl_is_sfc,       &
                               mw_clear_sky_only,      &
@@ -788,7 +787,6 @@ namelist / obs_def_rttov_nml/ rttov_sensor_db_file,   &
                               htfrtc_simple_cloud,    &
                               htfrtc_overcast,        &
                               wfetc_value
-
 
 type(atmos_profile_type)     :: atmos
 type(trace_gas_profile_type) :: trace_gas
@@ -4280,8 +4278,6 @@ function get_rttov_option_logical(field_name) result(p)
          p = USER_CLD_OPT_PARAM
       case('GRID_BOX_AVG_CLOUD')
          p = GRID_BOX_AVG_CLOUD
-      case('CLOUD_OVERLAP')
-         p = cloud_overlap
       case('ADDPC')
          p = ADDPC
       case('ADDRADREC')

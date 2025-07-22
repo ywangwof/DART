@@ -6,7 +6,7 @@ Overview
 
 Main program for driving ensemble filter assimilations.
 
-``filter`` is a Fortran 90 program, and provides a large number of options for controlling execution behavior and
+``filter`` is a Fortran program, and provides a large number of options for controlling execution behavior and
 parameter configuration that are driven from its namelist. See the namelist section below for more details. The number
 of assimilation steps to be done is controlled by the input observation sequence and by the time-stepping capabilities
 of the model being used in the assimilation.
@@ -23,7 +23,7 @@ This overview includes these subsections:
 -  Description of Inflation Options
 -  Detailed Program Flow
 
-See :doc:`../../../README` for more documentation, including a discussion of the
+See :ref:`Welcome page` for more documentation, including a discussion of the
 capabilities of the assimilation system, a diagram of the entire execution cycle, the options and features.
 
 Program flow
