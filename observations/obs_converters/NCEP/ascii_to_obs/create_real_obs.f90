@@ -8,7 +8,7 @@ program create_real_obs
 
 use types_mod,        only : r8, deg2rad, PI
 use obs_sequence_mod, only : obs_sequence_type, write_obs_seq, &
-                             static_init_obs_sequence, destroy_obs_sequence 
+                             static_init_obs_sequence, destroy_obs_sequence
 use     real_obs_mod, only : real_obs_sequence
 use    utilities_mod, only : initialize_utilities, register_module,            &
                              do_output, nmlfileunit, do_nml_file, do_nml_term, &
@@ -32,8 +32,8 @@ real(r8) :: bbb, eee, delt
 ! ----------------------------------------------------------------------
 ! Declare namelist parameters
 ! ----------------------------------------------------------------------
-        
-integer :: year = 2003, month =1, day =1, hour=0, tot_days = 31
+
+integer :: year = 2003, month =1, day =1, hour=0, tot_days = 31, days
 integer :: max_num = 800000, select_obs = 0
 character(len = 256) :: ObsBase = 'temp_obs.'
 logical :: ADPUPA = .false., AIRCAR = .false., AIRCFT = .false., &
@@ -41,11 +41,11 @@ logical :: ADPUPA = .false., AIRCAR = .false., AIRCFT = .false., &
            ADPSFC = .false.
 
 logical :: obs_U  = .false., obs_V  = .false., obs_T  = .false. , &
-           obs_PS = .false., obs_QV = .false., daily_file = .true., & 
+           obs_PS = .false., obs_QV = .false., daily_file = .true., &
            obs_time = .true., obs_Z = .false.
 
 real(r8) :: lon1 =   0.0_r8,  &   !  lower longitude bound
-            lon2 = 360.0_r8,  &   !  upper longitude bound 
+            lon2 = 360.0_r8,  &   !  upper longitude bound
             lat1 = -90.0_r8,  &   !  lower latitude bound
             lat2 =  90.0_r8       !  upper latitude bound
 
@@ -54,9 +54,9 @@ logical  :: include_specific_humidity = .true.,  &
             include_dewpoint          = .false., &
             include_surface_pressure  = .true.
 
-namelist /ncepobs_nml/ year, month, day, hour, tot_days, max_num, select_obs,  &
+namelist /ncepobs_nml/ year, month, day, hour, days, tot_days, max_num, select_obs,  &
         ObsBase, ADPUPA, AIRCAR, AIRCFT, SATEMP, SFCSHP, ADPSFC, SATWND, &
-        obs_U, obs_V, obs_T, obs_PS, obs_QV, obs_Z, daily_file, lon1, lon2, & 
+        obs_U, obs_V, obs_T, obs_PS, obs_QV, obs_Z, daily_file, lon1, lon2, &
         lat1, lat2, obs_time, include_specific_humidity, &
         include_relative_humidity, include_dewpoint, include_surface_pressure
 
@@ -93,9 +93,9 @@ if (do_nml_term()) write(     *     , nml=ncepobs_nml)
 
   ! define observation filename
   write(obsdate, '(i4.4,i2.2,i2.2,i2.2)') year, month, day, hour
-   
+
 !   bbb=0.0
-!   eee=24.0 
+!   eee=24.0
 
     delt = 0.25 !15 minutes
     ! CSS values in the intermediate ascii file for analysis times at 00z
@@ -103,12 +103,13 @@ if (do_nml_term()) write(     *     , nml=ncepobs_nml)
     if ( hour .eq. 0 ) then ! CSS
        eee=real(hour) + delt + 24. ! CSS
        bbb=real(hour) - delt + 24. ! CSS
+       days = days - 1
     else ! CSS
        eee=real(hour) + delt
        bbb=real(hour) - delt
     endif ! CSS
 
-    seq = real_obs_sequence(year, month, day, hour, max_num, select_obs, &
+    seq = real_obs_sequence(year, month, day, hour, days, max_num, select_obs, &
          ObsBase, ADPUPA, AIRCAR, AIRCFT, SATEMP, SFCSHP, ADPSFC, SATWND, &
          obs_U, obs_V, obs_T, obs_PS, obs_QV, obs_Z, include_specific_humidity, &
          include_relative_humidity, include_dewpoint, include_surface_pressure, &

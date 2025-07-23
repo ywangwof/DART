@@ -106,7 +106,7 @@ character(len=512) :: msgstring1, msgstring2, msgstring3
 contains
 
 
-function real_obs_sequence (year, month, day, hour, max_num, select_obs, &
+function real_obs_sequence (year, month, day, hour, day0, max_num, select_obs, &
           ObsBase, ADDUPA, AIRCAR, AIRCFT, SATEMP, SFCSHP, ADPSFC, SATWND, &
           obs_U, obs_V, obs_T, obs_PS, obs_QV, obs_Z, inc_specific_humidity,&
           inc_relative_humidity, inc_dewpoint, inc_surface_pressure, &
@@ -115,6 +115,7 @@ function real_obs_sequence (year, month, day, hour, max_num, select_obs, &
 !  this function is to prepare NCEP decoded BUFR data to DART sequence format
 !
 integer,            intent(in) :: year, month, day, hour, max_num, select_obs
+integer,            intent(in) :: day0
 character(len = *), intent(in) :: ObsBase
 logical,            intent(in) :: ADDUPA, AIRCAR, AIRCFT, SATEMP, SFCSHP, ADPSFC, SATWND
 logical,            intent(in) :: obs_U, obs_V, obs_T, obs_PS, obs_QV, obs_Z, obs_time
@@ -128,7 +129,8 @@ type(obs_sequence_type) :: real_obs_sequence
 type(obs_type) :: obs, prev_obs
 integer :: i, io, num_copies, num_qc
 integer :: days, seconds
-integer :: day0, sec0
+!integer :: day0, sec0
+integer :: sec0
 integer :: imin, sec
 integer :: obs_num, calender_type, read_counter
 type(time_type) :: current_day, time_obs, prev_time
@@ -202,8 +204,9 @@ call set_calendar_type(calender_type)
 imin = 0
 sec  = 0
 
-current_day = set_date(year, month, day, hour, imin, sec)
-call get_time(current_day, sec0, day0)
+!current_day = set_date(year, month, day, hour, imin, sec)
+!call get_time(current_day, sec0, day0)
+sec0 = 0
 
 !   output the day and sec.
 write(msgstring1,*) 'processing data for day, sec= ', day0, sec0
